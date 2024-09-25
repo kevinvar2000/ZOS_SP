@@ -16,10 +16,10 @@ func main() {
 	fmt.Println("Welcome to the file system simulator")
 	fmt.Println("KIV/ZOS - SP 2024; Author: Kevin Varchola")
 
-	// Read input from the user
-	var input string
+	// Read filename from the user
+	var filename string
 	fmt.Print("Enter the file name: ")
-	fmt.Scanln(&input)
+	fmt.Scanln(&filename)
 
 	for {
 		printHelp()
@@ -29,11 +29,11 @@ func main() {
 
 		switch command {
 		case "cpy":
-			copyFile(input)
+			copyFile(filename)
 		case "mv":
-			moveFile(input)
+			moveFile(filename)
 		case "rm":
-			removeFile(input)
+			removeFile(filename)
 		case "mkdir":
 			makeDirectory()
 		case "rmdir":
@@ -41,7 +41,7 @@ func main() {
 		case "ls":
 			printDirectoryContents()
 		case "cat":
-			printFileContents(input)
+			printFileContents(filename)
 		case "cd":
 			changePath()
 		case "pwd":
@@ -53,9 +53,9 @@ func main() {
 		case "outcp":
 			outcp()
 		case "load":
-			loadFile(input)
+			loadFile(filename)
 		case "format":
-			formatFile(input)
+			formatFile(filename)
 		case "exit":
 			return
 		default:
@@ -65,13 +65,13 @@ func main() {
 	}
 
 	// Copy the file
-	// copyFile(input)
+	// copyFile(filename)
 
 	// Move the file
-	// moveFile(input)
+	// moveFile(filename)
 
 	// Remove the file
-	// removeFile(input)
+	// removeFile(filename)
 
 	// Make a directory
 	// makeDirectory()
@@ -83,7 +83,7 @@ func main() {
 	// printDirectoryContents()
 
 	// Print the contents of the file
-	// printFileContents(input)
+	// printFileContents(filename)
 
 	// Change the path
 	// changePath()
@@ -101,10 +101,10 @@ func main() {
 	// outcp()
 
 	// Load the file
-	// loadFile(input)
+	// loadFile(filename)
 
 	// Format the file
-	// formatFile(input)
+	// formatFile(filename)
 
 }
 
@@ -127,11 +127,11 @@ func printHelp() {
 	fmt.Println("exit - Exit the program")
 }
 
-func formatFile(input string) {
+func formatFile(filename string) {
 	panic("unimplemented")
 }
 
-func loadFile(input string) {
+func loadFile(filename string) {
 	panic("unimplemented")
 }
 
@@ -155,7 +155,7 @@ func changePath() {
 	panic("unimplemented")
 }
 
-func printFileContents(input string) {
+func printFileContents(filename string) {
 	panic("unimplemented")
 }
 
@@ -171,14 +171,14 @@ func makeDirectory() {
 	panic("unimplemented")
 }
 
-func removeFile(input string) {
+func removeFile(filename string) {
 	panic("unimplemented")
 }
 
-func moveFile(input string) {
+func moveFile(filename string) {
 	panic("unimplemented")
 }
 
-func copyFile(input string) {
+func copyFile(filename string) {
 	panic("unimplemented")
 }
