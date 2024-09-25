@@ -13,6 +13,9 @@ func main() {
 	// 	return
 	// }
 
+	fmt.Println("Welcome to the file system simulator")
+	fmt.Println("KIV/ZOS - SP 2024; Author: Kevin Varchola")
+
 	// Read input from the user
 	var input string
 	fmt.Print("Enter the file name: ")
