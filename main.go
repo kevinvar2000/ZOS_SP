@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 )
 
 func main() {
@@ -20,6 +21,45 @@ func main() {
 	var filename string
 	fmt.Print("Enter the file name: ")
 	fmt.Scanln(&filename)
+
+	_, err := os.Stat(filename)
+	if err == nil {
+
+		// File exists, read its contents
+		data, err := os.ReadFile(filename)
+		if err != nil {
+			fmt.Println("Error reading file:", err)
+			return
+		}
+		fmt.Println("File name:", filename)
+		fmt.Printf("File size: %d bytes\n", len(data))
+		fmt.Printf("File content:\n%s\n", data)
+
+	} else if os.IsNotExist(err) {
+
+		// File doesn't exist, ask for the file size and create it
+		var fileSize int64
+		fmt.Print("Enter the desired file size in bytes: ")
+		fmt.Scanln(&fileSize)
+
+		file, err := os.Create(filename)
+		if err != nil {
+			fmt.Println("Error creating file:", err)
+			return
+		}
+		defer file.Close()
+
+		// Write the desired number of bytes to the file
+		if fileSize > 0 {
+			_, err = file.Write(make([]byte, fileSize))
+			if err != nil {
+				fmt.Println("Error writing to file:", err)
+				return
+			}
+		}
+
+		fmt.Println("File created successfully!")
+	}
 
 	for {
 		printHelp()
