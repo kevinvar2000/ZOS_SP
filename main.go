@@ -10,23 +10,25 @@ var fs *FileSystem           // Declare globally to use in all functions
 
 func main() {
 
-	// Read arguments from the command line
-	// args := os.Args
 	fs := &FileSystem{}
 	fs.Init()
 
 	// Read arguments from the command line
-	// 	fmt.Println("Usage: go run main.go <file_name>")
-	// 	return
-	// }
+	args := os.Args
+	var filename string
+
+	if len(args) != 2 {
+		fmt.Println("Usage: go run main.go <file_name>")
+		// Read filename from the user
+		fmt.Print("Enter the file name: ")
+		fmt.Scanln(&filename)
+		return
+	} else {
+		filename = args[1]
+	}
 
 	fmt.Println("Welcome to the file system simulator")
 	fmt.Println("KIV/ZOS - SP 2024; Author: Kevin Varchola")
-
-	// Read filename from the user
-	var filename string
-	fmt.Print("Enter the file name: ")
-	fmt.Scanln(&filename)
 
 	_, err := os.Stat(filename)
 	if err == nil {
