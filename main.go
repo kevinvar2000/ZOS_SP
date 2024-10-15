@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 )
 
 var currentPath string = "/" // Assume a simple path system
@@ -13,22 +14,40 @@ func main() {
 	fs := &FileSystem{}
 	fs.Init()
 
+	fmt.Printf("Welcome to the file system simulator\n")
+	fmt.Printf("KIV/ZOS - SP 2024; Author: Kevin Varchola\n\n")
+
 	// Read arguments from the command line
 	args := os.Args
 	var filename string
 
-	if len(args) != 2 {
-		fmt.Println("Usage: go run main.go <file_name>")
-		// Read filename from the user
-		fmt.Print("Enter the file name: ")
-		fmt.Scanln(&filename)
-		return
-	} else {
+	// Check if the filename is provided as a command-line argument
+	if len(args) == 2 {
 		filename = args[1]
+	} else {
+		fmt.Println("Usage: go run main.go <file_name>")
 	}
 
-	fmt.Println("Welcome to the file system simulator")
-	fmt.Println("KIV/ZOS - SP 2024; Author: Kevin Varchola")
+	// Loop until a valid filename with the ".dat" extension is provided
+	for {
+		if filename == "" {
+			// Prompt the user to enter the filename
+			fmt.Print("Enter the file name: ")
+			fmt.Scanln(&filename)
+		}
+
+		// Check if the file has the correct ".dat" extension
+		if strings.HasSuffix(filename, ".dat") {
+			break
+		}
+
+		// Invalid extension, re-prompt the user
+		fmt.Println("Invalid file extension. Please use a .dat file.")
+		filename = ""
+	}
+
+	// Once a valid filename is provided
+	fmt.Printf("File '%s' has a valid extension. Proceeding...\n", filename)
 
 	_, err := os.Stat(filename)
 	if err == nil {
