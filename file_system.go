@@ -24,7 +24,7 @@ func (fs *FileSystem) Init() {
 }
 
 // Find a free cluster in FAT
-func (fs *FileSystem) findFreeCluster() (int, error) {
+func (fs *FileSystem) FindFreeCluster() (int, error) {
 
 	for i, val := range fs.FatTable {
 		if val == FAT_FREE {
@@ -36,7 +36,7 @@ func (fs *FileSystem) findFreeCluster() (int, error) {
 }
 
 // Load file from external system into pseudo-FAT (incp s1 s2)
-func (fs *FileSystem) inCp(filename string, data []byte) error {
+func (fs *FileSystem) InCp(filename string, data []byte) error {
 
 	// Ensure the filename is not too long
 	if len(filename) > MaxFileName {
@@ -50,7 +50,7 @@ func (fs *FileSystem) inCp(filename string, data []byte) error {
 
 	// Split data into clusters
 	numClusters := (len(data) + ClusterSize - 1) / ClusterSize
-	firstCluster, err := fs.findFreeCluster()
+	firstCluster, err := fs.FindFreeCluster()
 	if err != nil {
 		return err
 	}
@@ -58,7 +58,7 @@ func (fs *FileSystem) inCp(filename string, data []byte) error {
 	currentCluster := firstCluster
 	for i := 0; i < numClusters; i++ {
 		if i > 0 {
-			newCluster, err := fs.findFreeCluster()
+			newCluster, err := fs.FindFreeCluster()
 			if err != nil {
 				return err
 			}
@@ -88,7 +88,7 @@ func (fs *FileSystem) inCp(filename string, data []byte) error {
 }
 
 // Read a file from the pseudo-FAT (cat s1)
-func (fs *FileSystem) cat(filename string) error {
+func (fs *FileSystem) Cat(filename string) error {
 
 	entry, exists := fs.Directory[filename]
 	if !exists {
@@ -105,7 +105,7 @@ func (fs *FileSystem) cat(filename string) error {
 }
 
 // Remove a file (rm s1)
-func (fs *FileSystem) rm(filename string) error {
+func (fs *FileSystem) Rm(filename string) error {
 	entry, exists := fs.Directory[filename]
 	if !exists {
 		return fmt.Errorf("FILE NOT FOUND")

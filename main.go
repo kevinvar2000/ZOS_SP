@@ -70,7 +70,7 @@ func main() {
 	}
 
 	for {
-		printHelp()
+		PrintHelp()
 		fmt.Print("Enter the command: ")
 		var command string
 		fmt.Scanln(&command)
@@ -80,66 +80,66 @@ func main() {
 			fmt.Print("Enter source and destination: ")
 			var src, dest string
 			fmt.Scanln(&src, &dest)
-			copyFile(src, dest)
+			CopyFile(src, dest)
 		case "mv":
 			fmt.Print("Enter source and destination: ")
 			var src, dest string
 			fmt.Scanln(&src, &dest)
-			moveFile(src, dest)
+			MoveFile(src, dest)
 		case "rm":
 			fmt.Print("Enter the file to remove: ")
 			var filename string
 			fmt.Scanln(&filename)
-			removeFile(filename)
+			RemoveFile(filename)
 		case "mkdir":
 			fmt.Print("Enter the directory name: ")
 			var dirname string
 			fmt.Scanln(&dirname)
-			makeDirectory(dirname)
+			MakeDirectory(dirname)
 		case "rmdir":
 			fmt.Print("Enter the directory name: ")
 			var dirname string
 			fmt.Scanln(&dirname)
-			removeDirectory(dirname)
+			RemoveDirectory(dirname)
 		case "ls":
-			printDirectoryContents()
+			PrintDirectoryContents()
 		case "cat":
 			fmt.Print("Enter the file to display: ")
 			var filename string
 			fmt.Scanln(&filename)
-			printFileContents(filename)
+			PrintFileContents(filename)
 		case "cd":
 			fmt.Print("Enter the new path: ")
 			var newPath string
 			fmt.Scanln(&newPath)
-			changePath(newPath)
+			ChangePath(newPath)
 		case "pwd":
-			printCurrentPath()
+			PrintCurrentPath()
 		case "info":
 			fmt.Print("Enter the file to get info: ")
 			var filename string
 			fmt.Scanln(&filename)
-			printInformation(filename)
+			PrintInformation(filename)
 		case "incp":
 			fmt.Print("Enter source and destination: ")
 			var src, dest string
 			fmt.Scanln(&src, &dest)
-			incp(src, dest)
+			Incp(src, dest)
 		case "outcp":
 			fmt.Print("Enter source and destination: ")
 			var src, dest string
 			fmt.Scanln(&src, &dest)
-			outcp(src, dest)
+			Outcp(src, dest)
 		case "load":
 			fmt.Print("Enter the script filename to load: ")
 			var scriptFilename string
 			fmt.Scanln(&scriptFilename)
-			loadFile(scriptFilename)
+			LoadFile(scriptFilename)
 		case "format":
 			fmt.Print("Enter the filesystem filename to format: ")
 			var fsFilename string
 			fmt.Scanln(&fsFilename)
-			formatFile(fsFilename)
+			FormatFile(fsFilename)
 		case "exit":
 			fmt.Println("Exiting the file system simulator.")
 			return

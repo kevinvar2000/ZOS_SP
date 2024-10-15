@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func printHelp() {
+func PrintHelp() {
 	fmt.Println("Commands:")
 	fmt.Println("cpy - Copy the file")
 	fmt.Println("mv - Move the file")
@@ -25,7 +25,7 @@ func printHelp() {
 	fmt.Println("exit - Exit the program")
 }
 
-func formatFile(filename string) {
+func FormatFile(filename string) {
 	// Reset the FAT table and directory
 	fs := &FileSystem{}
 	fs.Init()
@@ -35,7 +35,7 @@ func formatFile(filename string) {
 	fmt.Println("OK")
 }
 
-func loadFile(filename string) {
+func LoadFile(filename string) {
 	// Open the file that contains commands
 	data, err := os.ReadFile(filename)
 	if err != nil {
@@ -53,7 +53,7 @@ func loadFile(filename string) {
 	fmt.Println("OK")
 }
 
-func outcp(src string, dest string) {
+func Outcp(src string, dest string) {
 	entry, exists := fs.Directory[src]
 	if !exists {
 		fmt.Println("FILE NOT FOUND")
@@ -78,7 +78,7 @@ func outcp(src string, dest string) {
 	fmt.Println("OK")
 }
 
-func incp(src string, dest string) {
+func Incp(src string, dest string) {
 	// Read the source file from the host system
 	data, err := os.ReadFile(src)
 	if err != nil {
@@ -87,7 +87,7 @@ func incp(src string, dest string) {
 	}
 
 	// Copy the file into the pseudoFAT system
-	err = fs.inCp(dest, data)
+	err = fs.InCp(dest, data)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -96,7 +96,7 @@ func incp(src string, dest string) {
 	fmt.Println("OK")
 }
 
-func printInformation(filename string) {
+func PrintInformation(filename string) {
 	entry, exists := fs.Directory[filename]
 	if !exists {
 		fmt.Println("FILE NOT FOUND")
@@ -114,12 +114,12 @@ func printInformation(filename string) {
 	fmt.Println()
 }
 
-func printCurrentPath() {
+func PrintCurrentPath() {
 	// Assume a simple path system, or modify it based on your directory structure
 	fmt.Println(currentPath) // currentPath should be a global variable maintaining the current path
 }
 
-func changePath(newPath string) {
+func ChangePath(newPath string) {
 	// Check if the directory exists in the pseudoFAT system
 	_, exists := fs.Directory[newPath]
 	if !exists {
@@ -132,20 +132,20 @@ func changePath(newPath string) {
 	fmt.Println("OK")
 }
 
-func printFileContents(filename string) {
-	err := fs.cat(filename)
+func PrintFileContents(filename string) {
+	err := fs.Cat(filename)
 	if err != nil {
 		fmt.Println(err)
 	}
 }
 
-func printDirectoryContents() {
+func PrintDirectoryContents() {
 	for name, entry := range fs.Directory {
 		fmt.Printf("FILE: %s, SIZE: %d bytes\n", name, entry.Size)
 	}
 }
 
-func removeDirectory(dirname string) {
+func RemoveDirectory(dirname string) {
 	// Check if the directory is empty
 	for name := range fs.Directory {
 		if strings.HasPrefix(name, dirname) {
@@ -159,7 +159,7 @@ func removeDirectory(dirname string) {
 	fmt.Println("OK")
 }
 
-func makeDirectory(dirname string) {
+func MakeDirectory(dirname string) {
 	// Ensure directory doesn't already exist
 	if _, exists := fs.Directory[dirname]; exists {
 		fmt.Println("EXIST")
@@ -171,14 +171,14 @@ func makeDirectory(dirname string) {
 	fmt.Println("OK")
 }
 
-func removeFile(filename string) {
-	err := fs.rm(filename)
+func RemoveFile(filename string) {
+	err := fs.Rm(filename)
 	if err != nil {
 		fmt.Println(err)
 	}
 }
 
-func moveFile(src string, dest string) {
+func MoveFile(src string, dest string) {
 	// Ensure the source file exists
 	entry, exists := fs.Directory[src]
 	if !exists {
@@ -198,7 +198,7 @@ func moveFile(src string, dest string) {
 	fmt.Println("OK")
 }
 
-func copyFile(src string, dest string) {
+func CopyFile(src string, dest string) {
 	// Ensure the source file exists
 	entry, exists := fs.Directory[src]
 	if !exists {
@@ -221,7 +221,7 @@ func copyFile(src string, dest string) {
 	}
 
 	// Copy the file data to the destination
-	err := fs.inCp(dest, data)
+	err := fs.InCp(dest, data)
 	if err != nil {
 		fmt.Println(err)
 	}
