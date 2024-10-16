@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"os"
 )
 
 // Initializes the file system
@@ -121,4 +122,128 @@ func (fs *FileSystem) Rm(filename string) error {
 	delete(fs.Directory, filename)
 	fmt.Println("OK")
 	return nil
+}
+
+func SaveFileSystem(filename string, fs *FileSystem) {
+
+	file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		fmt.Println("Error opening file:", err)
+		return
+	}
+	defer file.Close()
+
+	// Write the FAT table
+	for _, val := range fs.FatTable {
+		_, err = file.Write([]byte{byte(val)})
+		if err != nil {
+			fmt.Println("Error writing to file:", err)
+			return
+		}
+	}
+
+	// Write the directory
+	for _, entry := range fs.Directory {
+		_, err = file.Write([]byte(entry.Name))
+		if err != nil {
+			fmt.Println("Error writing to file:", err)
+			return
+		}
+		_, err = file.Write([]byte{0})
+		if err != nil {
+			fmt.Println("Error writing to file:", err)
+			return
+		}
+		_, err = file.Write([]byte{byte(entry.Size)})
+		if err != nil {
+			fmt.Println("Error writing to file:", err)
+			return
+		}
+		_, err = file.Write([]byte{byte(entry.FirstCluster)})
+		if err != nil {
+			fmt.Println("Error writing to file:", err)
+			return
+		}
+	}
+
+	// Write the cluster data
+	for _, data := range fs.ClusterData {
+		_, err = file.Write(data)
+		if err != nil {
+			fmt.Println("Error writing to file:", err)
+			return
+		}
+	}
+	fmt.Println("File system saved successfully!")
+
+}
+
+func LoadFileSystem(filename string) *FileSystem {
+
+	file, err := os.Open(filename)
+	if err != nil {
+		fmt.Println("Error opening file:", err)
+		return nil
+	}
+	defer file.Close()
+
+	fs := &FileSystem{}
+	fs.Init()
+
+	// Read the FAT table
+	for i := range fs.FatTable {
+		var val byte
+		_, err = file.Read([]byte{val})
+		if err != nil {
+			fmt.Println("Error reading file:", err)
+			return nil
+		}
+		fs.FatTable[i] = int(val)
+	}
+
+	// Read the directory
+	for {
+		var name string
+		for {
+			var b byte
+			_, err = file.Read([]byte{b})
+			if err != nil {
+				fmt.Println("Error reading file:", err)
+				return nil
+			}
+			if b == 0 {
+				break
+			}
+			name += string(b)
+		}
+		if name == "" {
+			break
+		}
+
+		var entry DirectoryEntry
+		entry.Name = name
+		_, err = file.Read([]byte{byte(entry.Size)})
+		if err != nil {
+			fmt.Println("Error reading file:", err)
+			return nil
+		}
+		_, err = file.Read([]byte{byte(entry.FirstCluster)})
+		if err != nil {
+			fmt.Println("Error reading file:", err)
+			return nil
+		}
+		fs.Directory[name] = entry
+	}
+
+	// Read the cluster data
+	for i := range fs.ClusterData {
+		_, err = file.Read(fs.ClusterData[i])
+		if err != nil {
+			fmt.Println("Error reading file:", err)
+			return nil
+		}
+	}
+
+	fmt.Println("File system loaded successfully!")
+	return fs
 }

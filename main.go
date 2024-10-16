@@ -47,10 +47,15 @@ func main() {
 	}
 
 	// Once a valid filename is provided
-	fmt.Printf("File '%s' has a valid extension. Proceeding...\n", filename)
+	fmt.Printf("File '%s' has a valid extension. Proceeding...\n\n", filename)
 
-	_, err := os.Stat(filename)
+	info, err := os.Stat(filename)
 	if err == nil {
+
+		// Check if the file is empty
+		if info.Size() == 0 {
+			fmt.Println("File is empty.")
+		}
 
 		// File exists, read its contents
 		data, err := os.ReadFile(filename)
@@ -60,7 +65,6 @@ func main() {
 		}
 		fmt.Println("File name:", filename)
 		fmt.Printf("File size: %d bytes\n", len(data))
-		fmt.Printf("File content:\n%s\n", data)
 
 	} else if os.IsNotExist(err) {
 
@@ -86,6 +90,15 @@ func main() {
 		}
 
 		fmt.Println("File created successfully!")
+	}
+
+	// Load the file system from the file
+	fs = LoadFileSystem(filename)
+
+	if fs == nil {
+		fmt.Println("Error loading file system")
+		// Save the file system to the file
+		SaveFileSystem(filename, fs)
 	}
 
 	for {
