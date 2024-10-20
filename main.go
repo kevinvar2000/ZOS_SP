@@ -9,97 +9,7 @@ import (
 var currentPath string = "/" // Assume a simple path system
 var fs *FileSystem           // Declare globally to use in all functions
 
-func main() {
-
-	fs := &FileSystem{}
-	fs.Init()
-
-	fmt.Printf("Welcome to the file system simulator\n")
-	fmt.Printf("KIV/ZOS - SP 2024; Author: Kevin Varchola\n\n")
-
-	// Read arguments from the command line
-	args := os.Args
-	var filename string
-
-	// Check if the filename is provided as a command-line argument
-	if len(args) == 2 {
-		filename = args[1]
-	} else {
-		fmt.Println("Usage: go run main.go <file_name>")
-	}
-
-	// Loop until a valid filename with the ".dat" extension is provided
-	for {
-		if filename == "" {
-			// Prompt the user to enter the filename
-			fmt.Print("Enter the file name: ")
-			fmt.Scanln(&filename)
-		}
-
-		// Check if the file has the correct ".dat" extension
-		if strings.HasSuffix(filename, ".dat") {
-			break
-		}
-
-		// Invalid extension, re-prompt the user
-		fmt.Println("Invalid file extension. Please use a .dat file.")
-		filename = ""
-	}
-
-	// Once a valid filename is provided
-	fmt.Printf("File '%s' has a valid extension. Proceeding...\n\n", filename)
-
-	info, err := os.Stat(filename)
-	if err == nil {
-
-		// Check if the file is empty
-		if info.Size() == 0 {
-			fmt.Println("File is empty.")
-		}
-
-		// File exists, read its contents
-		data, err := os.ReadFile(filename)
-		if err != nil {
-			fmt.Println("Error reading file:", err)
-			return
-		}
-		fmt.Println("File name:", filename)
-		fmt.Printf("File size: %d bytes\n", len(data))
-
-	} else if os.IsNotExist(err) {
-
-		// File doesn't exist, ask for the file size and create it
-		var fileSize int64
-		fmt.Print("Enter the desired file size in bytes: ")
-		fmt.Scanln(&fileSize)
-
-		file, err := os.Create(filename)
-		if err != nil {
-			fmt.Println("Error creating file:", err)
-			return
-		}
-		defer file.Close()
-
-		// Write the desired number of bytes to the file
-		if fileSize > 0 {
-			_, err = file.Write(make([]byte, fileSize))
-			if err != nil {
-				fmt.Println("Error writing to file:", err)
-				return
-			}
-		}
-
-		fmt.Println("File created successfully!")
-	}
-
-	// Load the file system from the file
-	fs = LoadFileSystem(filename)
-
-	if fs == nil {
-		fmt.Println("Error loading file system")
-		// Save the file system to the file
-		SaveFileSystem(filename, fs)
-	}
+func enterCommand() {
 
 	for {
 		PrintHelp()
@@ -180,5 +90,114 @@ func main() {
 		}
 
 	}
+
+}
+
+func checkFilename(filename string) {
+
+	// Loop until a valid filename with the ".dat" extension is provided
+	for {
+		if filename == "" {
+			// Prompt the user to enter the filename
+			fmt.Print("Enter the file name: ")
+			fmt.Scanln(&filename)
+		}
+
+		// Check if the file has the correct ".dat" extension
+		if strings.HasSuffix(filename, ".dat") {
+			break
+		}
+
+		// Invalid extension, re-prompt the user
+		fmt.Println("Invalid file extension. Please use a .dat file.")
+		filename = ""
+	}
+
+}
+
+func checkFile(filename string) {
+
+	info, err := os.Stat(filename)
+	if err == nil {
+
+		// Check if the file is empty
+		if info.Size() == 0 {
+			fmt.Println("File is empty.")
+		}
+
+		// File exists, read its contents
+		data, err := os.ReadFile(filename)
+		if err != nil {
+			fmt.Println("Error reading file:", err)
+			return
+		}
+		fmt.Println("File name:", filename)
+		fmt.Printf("File size: %d bytes\n", len(data))
+
+	} else if os.IsNotExist(err) {
+
+		// File doesn't exist, ask for the file size and create it
+		var fileSize int64
+		fmt.Print("Enter the desired file size in bytes: ")
+		fmt.Scanln(&fileSize)
+
+		file, err := os.Create(filename)
+		if err != nil {
+			fmt.Println("Error creating file:", err)
+			return
+		}
+		defer file.Close()
+
+		// Write the desired number of bytes to the file
+		if fileSize > 0 {
+			_, err = file.Write(make([]byte, fileSize))
+			if err != nil {
+				fmt.Println("Error writing to file:", err)
+				return
+			}
+		}
+
+		fmt.Println("File created successfully!")
+	}
+}
+
+func main() {
+
+	fs := &FileSystem{}
+	fs.Init()
+
+	fmt.Printf("Welcome to the file system simulator\n")
+	fmt.Printf("KIV/ZOS - SP 2024; Author: Kevin Varchola\n\n")
+
+	// Read arguments from the command line
+	args := os.Args
+	var filename string
+
+	// Check if the filename is provided as a command-line argument
+	if len(args) == 2 {
+		filename = args[1]
+	} else {
+		fmt.Println("Usage: go run main.go <file_name>")
+		fmt.Println("Please provide a file name as an argument.")
+		// return
+	}
+
+	checkFilename(filename)
+
+	// Once a valid filename is provided
+	fmt.Printf("File '%s' has a valid extension. Proceeding...\n\n", filename)
+
+	checkFile(filename)
+
+	// Load the file system from the file
+	fs = LoadFileSystem(filename)
+
+	if fs == nil {
+		fmt.Println("Error loading file system")
+		// Save the file system to the file
+		SaveFileSystem(filename, fs)
+	}
+
+	enterCommand()
 
 }
