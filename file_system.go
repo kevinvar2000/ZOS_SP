@@ -126,6 +126,8 @@ func (fs *FileSystem) Rm(filename string) error {
 
 func SaveFileSystem(filename string, fs *FileSystem) {
 
+	fmt.Printf("\nSaving file system...\n\n")
+
 	file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		fmt.Println("Error opening file:", err)
@@ -180,12 +182,21 @@ func SaveFileSystem(filename string, fs *FileSystem) {
 
 func LoadFileSystem(filename string) *FileSystem {
 
+	fmt.Printf("\nLoading file system...\n\n")
+
 	file, err := os.Open(filename)
 	if err != nil {
 		fmt.Println("Error opening file:", err)
 		return nil
 	}
 	defer file.Close()
+
+	// Check file size
+	_, err = file.Stat()
+	if err != nil {
+		fmt.Println("Error file stat:", err)
+		return nil
+	}
 
 	fs := &FileSystem{}
 	fs.Init()
@@ -246,4 +257,45 @@ func LoadFileSystem(filename string) *FileSystem {
 
 	fmt.Println("File system loaded successfully!")
 	return fs
+}
+
+// Format the file with the desired size
+func FormatFile(filename string, fileSize int64) {
+
+	// Create the file with the given size
+	file, err := os.Create(filename)
+	if err != nil {
+		return
+	}
+	defer file.Close()
+
+	// Ensure the file is of the specified size by writing empty bytes
+	if fileSize > 0 {
+		_, err = file.Write(make([]byte, fileSize))
+		if err != nil {
+			return
+		}
+	}
+
+	// Initialize the file system in memory (FAT, directory, etc.)
+	fs := &FileSystem{}
+	fs.Init()
+
+	// Adjust the number of clusters based on the file size
+	maxClusters := int(fileSize / ClusterSize)
+	if maxClusters > MaxClusters {
+		maxClusters = MaxClusters
+	}
+
+	fat_size := maxClusters * FAT_ENTRY
+	fat_clusters := (fat_size + ClusterSize - 1) / ClusterSize
+
+	// Initialize the file system's FAT and cluster data for the given size
+	for i := 0; i < maxClusters; i++ {
+		fs.FatTable[i] = FAT_FREE
+	}
+
+	// Save the initialized file system to the file
+	SaveFileSystem(filename, fs)
+
 }
