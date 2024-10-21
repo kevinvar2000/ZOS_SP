@@ -93,7 +93,9 @@ func enterCommand() {
 
 }
 
-func checkFilename(filename string) {
+func checkFilename() string {
+
+	var filename string
 
 	// Loop until a valid filename with the ".dat" extension is provided
 	for {
@@ -105,7 +107,7 @@ func checkFilename(filename string) {
 
 		// Check if the file has the correct ".dat" extension
 		if strings.HasSuffix(filename, ".dat") {
-			break
+			return filename
 		}
 
 		// Invalid extension, re-prompt the user
@@ -136,26 +138,8 @@ func checkFile(filename string) {
 
 	} else if os.IsNotExist(err) {
 
-		// File doesn't exist, ask for the file size and create it
-		var fileSize int64
-		fmt.Print("Enter the desired file size in bytes: ")
-		fmt.Scanln(&fileSize)
-
-		file, err := os.Create(filename)
-		if err != nil {
-			fmt.Println("Error creating file:", err)
-			return
-		}
-		defer file.Close()
-
-		// Write the desired number of bytes to the file
-		if fileSize > 0 {
-			_, err = file.Write(make([]byte, fileSize))
-			if err != nil {
-				fmt.Println("Error writing to file:", err)
-				return
-			}
-		}
+		// Format the file with the desired size
+		FormatFileCmd(filename)
 
 		fmt.Println("File created successfully!")
 	}
@@ -179,10 +163,9 @@ func main() {
 	} else {
 		fmt.Println("Usage: go run main.go <file_name>")
 		fmt.Println("Please provide a file name as an argument.")
+		filename = checkFilename()
 		// return
 	}
-
-	checkFilename(filename)
 
 	// Once a valid filename is provided
 	fmt.Printf("File '%s' has a valid extension. Proceeding...\n\n", filename)
@@ -194,10 +177,16 @@ func main() {
 
 	if fs == nil {
 		fmt.Println("Error loading file system")
+		fmt.Println("Creating a new file system")
+
+		// Initialize the file system
+		fs = &FileSystem{}
+		fs.Init()
+
 		// Save the file system to the file
 		SaveFileSystem(filename, fs)
 	}
 
-	enterCommand()
+	// enterCommand()
 
 }
