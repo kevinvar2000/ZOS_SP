@@ -25,10 +25,17 @@ func PrintHelp() {
 	fmt.Println("exit - Exit the program")
 }
 
-func FormatFile(filename string) {
+func FormatFileCmd(filename string) {
 	// Reset the FAT table and directory
 	fs := &FileSystem{}
 	fs.Init()
+
+	// File doesn't exist, ask for the file size and create it
+	var fileSize int64 // TODO: Change to bytes
+	fmt.Print("Enter the desired file size in bytes: ")
+	fmt.Scanln(&fileSize)
+
+	FormatFile(filename, fileSize)
 
 	// Optionally, you can write the empty FAT and directory to disk
 	// to persist the formatted file system.
