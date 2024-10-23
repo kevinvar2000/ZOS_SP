@@ -9,17 +9,17 @@ import (
 // Initializes the file system
 func (fs *FileSystem) Init() {
 
-	fs.FatTable = [MaxClusters]int{}
+	fs.fat_table = [MAX_CLUSTER_COUNT]int{}
 
-	for i := range fs.FatTable {
-		fs.FatTable[i] = FAT_FREE
+	for i := range fs.fat_table {
+		fs.fat_table[i] = FAT_FREE
 	}
 
-	fs.Directory = make(map[string]DirectoryEntry)
-	fs.ClusterData = make([][]byte, MaxClusters)
+	fs.directory = make(map[string]DirectoryEntry)
+	fs.cluster_data = make([][]byte, MAX_CLUSTER_COUNT)
 
-	for i := range fs.ClusterData {
-		fs.ClusterData[i] = make([]byte, ClusterSize)
+	for i := range fs.cluster_data {
+		fs.cluster_data[i] = make([]byte, CLUSTER_SIZE)
 	}
 
 }
@@ -27,7 +27,7 @@ func (fs *FileSystem) Init() {
 // Find a free cluster in FAT
 func (fs *FileSystem) FindFreeCluster() (int, error) {
 
-	for i, val := range fs.FatTable {
+	for i, val := range fs.fat_table {
 		if val == FAT_FREE {
 			return i, nil
 		}
@@ -40,17 +40,17 @@ func (fs *FileSystem) FindFreeCluster() (int, error) {
 func (fs *FileSystem) InCp(filename string, data []byte) error {
 
 	// Ensure the filename is not too long
-	if len(filename) > MaxFileName {
+	if len(filename) > MAX_FILE_NAME {
 		return fmt.Errorf("filename too long")
 	}
 
 	// Ensure the file does not already exist
-	if _, exists := fs.Directory[filename]; exists {
+	if _, exists := fs.directory[filename]; exists {
 		return fmt.Errorf("file already exists")
 	}
 
 	// Split data into clusters
-	numClusters := (len(data) + ClusterSize - 1) / ClusterSize
+	numClusters := (len(data) + CLUSTER_SIZE - 1) / CLUSTER_SIZE
 	firstCluster, err := fs.FindFreeCluster()
 	if err != nil {
 		return err
@@ -63,25 +63,25 @@ func (fs *FileSystem) InCp(filename string, data []byte) error {
 			if err != nil {
 				return err
 			}
-			fs.FatTable[currentCluster] = newCluster
+			fs.fat_table[currentCluster] = newCluster
 			currentCluster = newCluster
 		}
 
 		// Copy the data into the cluster
-		start := i * ClusterSize
-		end := start + ClusterSize
+		start := i * CLUSTER_SIZE
+		end := start + CLUSTER_SIZE
 		if end > len(data) {
 			end = len(data)
 		}
-		copy(fs.ClusterData[currentCluster], data[start:end])
+		copy(fs.cluster_data[currentCluster], data[start:end])
 	}
-	fs.FatTable[currentCluster] = FAT_EOF
+	fs.fat_table[currentCluster] = FAT_EOF
 
 	// Add to directory
-	fs.Directory[filename] = DirectoryEntry{
-		Name:         filename,
-		Size:         len(data),
-		FirstCluster: firstCluster,
+	fs.directory[filename] = DirectoryEntry{
+		name:          filename,
+		size:          len(data),
+		first_cluster: firstCluster,
 	}
 
 	fmt.Println("OK")
@@ -91,15 +91,15 @@ func (fs *FileSystem) InCp(filename string, data []byte) error {
 // Read a file from the pseudo-FAT (cat s1)
 func (fs *FileSystem) Cat(filename string) error {
 
-	entry, exists := fs.Directory[filename]
+	entry, exists := fs.directory[filename]
 	if !exists {
 		return fmt.Errorf("FILE NOT FOUND")
 	}
 
-	currentCluster := entry.FirstCluster
+	currentCluster := entry.first_cluster
 	for currentCluster != FAT_EOF {
-		fmt.Printf("%s", fs.ClusterData[currentCluster])
-		currentCluster = fs.FatTable[currentCluster]
+		fmt.Printf("%s", fs.cluster_data[currentCluster])
+		currentCluster = fs.fat_table[currentCluster]
 	}
 	fmt.Println("OK")
 	return nil
@@ -107,19 +107,19 @@ func (fs *FileSystem) Cat(filename string) error {
 
 // Remove a file (rm s1)
 func (fs *FileSystem) Rm(filename string) error {
-	entry, exists := fs.Directory[filename]
+	entry, exists := fs.directory[filename]
 	if !exists {
 		return fmt.Errorf("FILE NOT FOUND")
 	}
 
-	currentCluster := entry.FirstCluster
+	currentCluster := entry.first_cluster
 	for currentCluster != FAT_EOF {
-		nextCluster := fs.FatTable[currentCluster]
-		fs.FatTable[currentCluster] = FAT_FREE // Mark the cluster as free
+		nextCluster := fs.fat_table[currentCluster]
+		fs.fat_table[currentCluster] = FAT_FREE // Mark the cluster as free
 		currentCluster = nextCluster
 	}
 
-	delete(fs.Directory, filename)
+	delete(fs.directory, filename)
 	fmt.Println("OK")
 	return nil
 }
@@ -136,7 +136,7 @@ func SaveFileSystem(filename string, fs *FileSystem) {
 	defer file.Close()
 
 	// Write the FAT table
-	for _, val := range fs.FatTable {
+	for _, val := range fs.fat_table {
 		_, err = file.Write([]byte{byte(val)})
 		if err != nil {
 			fmt.Println("Error writing to file:", err)
@@ -145,8 +145,8 @@ func SaveFileSystem(filename string, fs *FileSystem) {
 	}
 
 	// Write the directory
-	for _, entry := range fs.Directory {
-		_, err = file.Write([]byte(entry.Name))
+	for _, entry := range fs.directory {
+		_, err = file.Write([]byte(entry.name))
 		if err != nil {
 			fmt.Println("Error writing to file:", err)
 			return
@@ -156,12 +156,12 @@ func SaveFileSystem(filename string, fs *FileSystem) {
 			fmt.Println("Error writing to file:", err)
 			return
 		}
-		_, err = file.Write([]byte{byte(entry.Size)})
+		_, err = file.Write([]byte{byte(entry.size)})
 		if err != nil {
 			fmt.Println("Error writing to file:", err)
 			return
 		}
-		_, err = file.Write([]byte{byte(entry.FirstCluster)})
+		_, err = file.Write([]byte{byte(entry.first_cluster)})
 		if err != nil {
 			fmt.Println("Error writing to file:", err)
 			return
@@ -169,7 +169,7 @@ func SaveFileSystem(filename string, fs *FileSystem) {
 	}
 
 	// Write the cluster data
-	for _, data := range fs.ClusterData {
+	for _, data := range fs.cluster_data {
 		_, err = file.Write(data)
 		if err != nil {
 			fmt.Println("Error writing to file:", err)
@@ -202,14 +202,14 @@ func LoadFileSystem(filename string) *FileSystem {
 	fs.Init()
 
 	// Read the FAT table
-	for i := range fs.FatTable {
+	for i := range fs.fat_table {
 		var val byte
 		_, err = file.Read([]byte{val})
 		if err != nil {
 			fmt.Println("Error reading file:", err)
 			return nil
 		}
-		fs.FatTable[i] = int(val)
+		fs.fat_table[i] = int(val)
 	}
 
 	// Read the directory
@@ -232,23 +232,23 @@ func LoadFileSystem(filename string) *FileSystem {
 		}
 
 		var entry DirectoryEntry
-		entry.Name = name
-		_, err = file.Read([]byte{byte(entry.Size)})
+		entry.name = name
+		_, err = file.Read([]byte{byte(entry.size)})
 		if err != nil {
 			fmt.Println("Error reading file:", err)
 			return nil
 		}
-		_, err = file.Read([]byte{byte(entry.FirstCluster)})
+		_, err = file.Read([]byte{byte(entry.first_cluster)})
 		if err != nil {
 			fmt.Println("Error reading file:", err)
 			return nil
 		}
-		fs.Directory[name] = entry
+		fs.directory[name] = entry
 	}
 
 	// Read the cluster data
-	for i := range fs.ClusterData {
-		_, err = file.Read(fs.ClusterData[i])
+	for i := range fs.cluster_data {
+		_, err = file.Read(fs.cluster_data[i])
 		if err != nil {
 			fmt.Println("Error reading file:", err)
 			return nil
@@ -282,20 +282,35 @@ func FormatFile(filename string, fileSize int64) {
 	fs.Init()
 
 	// Adjust the number of clusters based on the file size
-	maxClusters := int(fileSize / ClusterSize)
-	if maxClusters > MaxClusters {
-		maxClusters = MaxClusters
+	cluster_count := int(fileSize / CLUSTER_SIZE)
+	if cluster_count > MAX_CLUSTER_COUNT {
+		cluster_count = MAX_CLUSTER_COUNT
 	}
 
-	fat_size := maxClusters * FAT_ENTRY
-	fat_clusters := (fat_size + ClusterSize - 1) / ClusterSize
+	// Calculate the size of the FAT in bytes and the number of clusters it occupies
+	fat_size := cluster_count * FAT_ENTRY
+	fat_clusters := (fat_size + CLUSTER_SIZE - 1) / CLUSTER_SIZE
 
 	// Initialize the file system's FAT and cluster data for the given size
-	for i := 0; i < maxClusters; i++ {
-		fs.FatTable[i] = FAT_FREE
+	for i := 0; i < cluster_count; i++ {
+		fs.fat_table[i] = FAT_FREE
 	}
+
+	// Set the starting addresses for FAT1, FAT2, and data section (optional)
+	fat1_start := CLUSTER_SIZE                           // FAT1 starts after boot sector
+	fat2_start := fat1_start + fat_clusters*CLUSTER_SIZE // FAT2 starts after FAT1
+	data_start := fat2_start + fat_clusters*CLUSTER_SIZE // Data starts after FAT2
+
+	fmt.Printf("FAT1 starts at: %d\nFAT2 starts at: %d\nData starts at: %d\n", fat1_start, fat2_start, data_start)
 
 	// Save the initialized file system to the file
 	SaveFileSystem(filename, fs)
+	// err = SaveFileSystem(filename, fs)
+	// if err != nil {
+	// 	fmt.Println("Error saving file system:", err)
+	// 	return
+	// }
+
+	fmt.Println("File system formatted and saved successfully!")
 
 }
