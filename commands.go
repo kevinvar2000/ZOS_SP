@@ -33,9 +33,8 @@ func FormatFileCmd(filename string) {
 
 	FormatFile(filename, fileSize)
 
-	// Optionally, you can write the empty FAT and directory to disk
-	// to persist the formatted file system.
-	fmt.Println("OK")
+	// The FAT and directory have been initialized and saved
+	fmt.Println("File system formatted successfully!")
 }
 
 func LoadFile(filename string) {

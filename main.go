@@ -125,24 +125,26 @@ func checkFile(filename string) {
 		// Check if the file is empty
 		if info.Size() == 0 {
 			fmt.Println("File is empty.")
+		} else {
+			fmt.Println("File name:", filename)
+			fmt.Printf("File size: %d bytes\n", info.Size())
 		}
-
-		// File exists, read its contents
-		data, err := os.ReadFile(filename)
-		if err != nil {
-			fmt.Println("Error reading file:", err)
-			return
-		}
-		fmt.Println("File name:", filename)
-		fmt.Printf("File size: %d bytes\n", len(data))
 
 	} else if os.IsNotExist(err) {
+
+		fmt.Println("File does not exist. Formatting a new file system...")
 
 		// Format the file with the desired size
 		FormatFileCmd(filename)
 
 		fmt.Println("File created successfully!")
+
+	} else {
+
+		fmt.Println("Error reading file:", err)
+
 	}
+
 }
 
 func main() {
@@ -173,19 +175,16 @@ func main() {
 	checkFile(filename)
 
 	// Load the file system from the file
-	fs = LoadFileSystem(filename)
+	// fs = LoadFileSystem(filename)
 
-	if fs == nil {
-		fmt.Println("Error loading file system")
-		fmt.Println("Creating a new file system")
+	// if fs == nil {
+	// 	fmt.Println("Error loading file system")
+	// 	fmt.Println("Creating a new file system")
+	// }
 
-		// Initialize the file system
-		fs = &FileSystem{}
-		fs.Init()
-
-		// Save the file system to the file
-		SaveFileSystem(filename, fs)
-	}
+	// Check file again
+	fmt.Println("Checking the file system again without load...")
+	checkFile(filename)
 
 	// enterCommand()
 
