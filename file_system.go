@@ -275,7 +275,7 @@ func FormatFile(filename string, fileSize int64) {
 
 	// Calculate the size of the FAT in bytes and the number of clusters it occupies
 	fat_size := cluster_count * FAT_ENTRY
-	fat_clusters := (fat_size + CLUSTER_SIZE - 1) / CLUSTER_SIZE
+	fat_cluster_count := (fat_size + CLUSTER_SIZE - 1) / CLUSTER_SIZE
 
 	// Initialize the file system's FAT and cluster data for the given size
 	for i := 0; i < cluster_count; i++ {
@@ -283,9 +283,9 @@ func FormatFile(filename string, fileSize int64) {
 	}
 
 	// Set the starting addresses for FAT1, FAT2, and data section (optional)
-	fat1_start := CLUSTER_SIZE                           // FAT1 starts after boot sector
-	fat2_start := fat1_start + fat_clusters*CLUSTER_SIZE // FAT2 starts after FAT1
-	data_start := fat2_start + fat_clusters*CLUSTER_SIZE // Data starts after FAT2
+	fat1_start := CLUSTER_SIZE                                // FAT1 starts after boot sector
+	fat2_start := fat1_start + fat_cluster_count*CLUSTER_SIZE // FAT2 starts after FAT1
+	data_start := fat2_start + fat_cluster_count*CLUSTER_SIZE // Data starts after FAT2
 
 	fmt.Printf("FAT1 starts at: %d\nFAT2 starts at: %d\nData starts at: %d\n", fat1_start, fat2_start, data_start)
 
