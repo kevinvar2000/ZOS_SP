@@ -81,7 +81,7 @@ func enterCommand() {
 			fmt.Print("Enter the filesystem filename to format: ")
 			var fsFilename string
 			fmt.Scanln(&fsFilename)
-			FormatFile(fsFilename)
+			FormatFileCmd(fsFilename)
 		case "exit":
 			fmt.Println("Exiting the file system simulator.")
 			return
