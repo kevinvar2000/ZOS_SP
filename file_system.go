@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"os"
@@ -137,7 +138,7 @@ func SaveFileSystem(filename string, fs *FileSystem) {
 
 	// Write the FAT table
 	for _, val := range fs.fat_table {
-		_, err = file.Write([]byte{byte(val)})
+		err = binary.Write(file, binary.LittleEndian, int32(val))
 		if err != nil {
 			fmt.Println("Error writing to file:", err)
 			return
@@ -145,25 +146,24 @@ func SaveFileSystem(filename string, fs *FileSystem) {
 	}
 
 	// Write the directory
-	for _, entry := range fs.directory {
-		_, err = file.Write([]byte(entry.name))
+	for name, entry := range fs.directory {
+		// Write the file name as a fixed 12-byte field (8.3 filename format)
+		nameBytes := make([]byte, MAX_FILE_NAME)
+		copy(nameBytes, name) // Copy the file name to the fixed-length byte slice
+		_, err = file.Write(nameBytes)
 		if err != nil {
-			fmt.Println("Error writing to file:", err)
 			return
 		}
-		_, err = file.Write([]byte{0})
+
+		// Write the file size as a 4-byte integer
+		err = binary.Write(file, binary.LittleEndian, int32(entry.size))
 		if err != nil {
-			fmt.Println("Error writing to file:", err)
 			return
 		}
-		_, err = file.Write([]byte{byte(entry.size)})
+
+		// Write the first cluster as a 4-byte integer
+		err = binary.Write(file, binary.LittleEndian, int32(entry.first_cluster))
 		if err != nil {
-			fmt.Println("Error writing to file:", err)
-			return
-		}
-		_, err = file.Write([]byte{byte(entry.first_cluster)})
-		if err != nil {
-			fmt.Println("Error writing to file:", err)
 			return
 		}
 	}
@@ -176,6 +176,7 @@ func SaveFileSystem(filename string, fs *FileSystem) {
 			return
 		}
 	}
+
 	fmt.Println("File system saved successfully!")
 
 }
@@ -261,21 +262,6 @@ func LoadFileSystem(filename string) *FileSystem {
 
 // Format the file with the desired size
 func FormatFile(filename string, fileSize int64) {
-
-	// Create the file with the given size
-	file, err := os.Create(filename)
-	if err != nil {
-		return
-	}
-	defer file.Close()
-
-	// Ensure the file is of the specified size by writing empty bytes
-	if fileSize > 0 {
-		_, err = file.Write(make([]byte, fileSize))
-		if err != nil {
-			return
-		}
-	}
 
 	// Initialize the file system in memory (FAT, directory, etc.)
 	fs := &FileSystem{}
