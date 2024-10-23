@@ -61,7 +61,7 @@ func LoadFile(filename string) {
 }
 
 func Outcp(src string, dest string) {
-	entry, exists := fs.Directory[src]
+	entry, exists := fs.directory[src]
 	if !exists {
 		fmt.Println("FILE NOT FOUND")
 		return
@@ -76,10 +76,10 @@ func Outcp(src string, dest string) {
 	defer outFile.Close()
 
 	// Read from the pseudoFAT and write to the destination file
-	currentCluster := entry.FirstCluster
+	currentCluster := entry.first_cluster
 	for currentCluster != FAT_EOF {
-		outFile.Write(fs.ClusterData[currentCluster])
-		currentCluster = fs.FatTable[currentCluster]
+		outFile.Write(fs.cluster_data[currentCluster])
+		currentCluster = fs.fat_table[currentCluster]
 	}
 
 	fmt.Println("OK")
@@ -104,7 +104,7 @@ func Incp(src string, dest string) {
 }
 
 func PrintInformation(filename string) {
-	entry, exists := fs.Directory[filename]
+	entry, exists := fs.directory[filename]
 	if !exists {
 		fmt.Println("FILE NOT FOUND")
 		return
@@ -113,10 +113,10 @@ func PrintInformation(filename string) {
 	fmt.Printf("%s:", filename)
 
 	// Traverse the FAT chain and print cluster numbers
-	currentCluster := entry.FirstCluster
+	currentCluster := entry.first_cluster
 	for currentCluster != FAT_EOF {
 		fmt.Printf(" %d", currentCluster)
-		currentCluster = fs.FatTable[currentCluster]
+		currentCluster = fs.fat_table[currentCluster]
 	}
 	fmt.Println()
 }
@@ -128,7 +128,7 @@ func PrintCurrentPath() {
 
 func ChangePath(newPath string) {
 	// Check if the directory exists in the pseudoFAT system
-	_, exists := fs.Directory[newPath]
+	_, exists := fs.directory[newPath]
 	if !exists {
 		fmt.Println("PATH NOT FOUND")
 		return
@@ -147,14 +147,14 @@ func PrintFileContents(filename string) {
 }
 
 func PrintDirectoryContents() {
-	for name, entry := range fs.Directory {
-		fmt.Printf("FILE: %s, SIZE: %d bytes\n", name, entry.Size)
+	for name, entry := range fs.directory {
+		fmt.Printf("FILE: %s, SIZE: %d bytes\n", name, entry.size)
 	}
 }
 
 func RemoveDirectory(dirname string) {
 	// Check if the directory is empty
-	for name := range fs.Directory {
+	for name := range fs.directory {
 		if strings.HasPrefix(name, dirname) {
 			fmt.Println("NOT EMPTY")
 			return
@@ -162,19 +162,19 @@ func RemoveDirectory(dirname string) {
 	}
 
 	// Remove the directory from the directory list
-	delete(fs.Directory, dirname)
+	delete(fs.directory, dirname)
 	fmt.Println("OK")
 }
 
 func MakeDirectory(dirname string) {
 	// Ensure directory doesn't already exist
-	if _, exists := fs.Directory[dirname]; exists {
+	if _, exists := fs.directory[dirname]; exists {
 		fmt.Println("EXIST")
 		return
 	}
 
 	// Create a directory (it behaves as a special file)
-	fs.Directory[dirname] = DirectoryEntry{Name: dirname, Size: 0, FirstCluster: FAT_EOF}
+	fs.directory[dirname] = DirectoryEntry{name: dirname, size: 0, first_cluster: FAT_EOF}
 	fmt.Println("OK")
 }
 
@@ -187,44 +187,44 @@ func RemoveFile(filename string) {
 
 func MoveFile(src string, dest string) {
 	// Ensure the source file exists
-	entry, exists := fs.Directory[src]
+	entry, exists := fs.directory[src]
 	if !exists {
 		fmt.Println("FILE NOT FOUND")
 		return
 	}
 
 	// Ensure the destination does not exist
-	if _, exists := fs.Directory[dest]; exists {
+	if _, exists := fs.directory[dest]; exists {
 		fmt.Println("PATH NOT FOUND")
 		return
 	}
 
 	// Rename the file (move in directory)
-	fs.Directory[dest] = entry
-	delete(fs.Directory, src)
+	fs.directory[dest] = entry
+	delete(fs.directory, src)
 	fmt.Println("OK")
 }
 
 func CopyFile(src string, dest string) {
 	// Ensure the source file exists
-	entry, exists := fs.Directory[src]
+	entry, exists := fs.directory[src]
 	if !exists {
 		fmt.Println("FILE NOT FOUND")
 		return
 	}
 
 	// Ensure the destination does not exist
-	if _, exists := fs.Directory[dest]; exists {
+	if _, exists := fs.directory[dest]; exists {
 		fmt.Println("PATH NOT FOUND")
 		return
 	}
 
 	// Read the file data from source
-	currentCluster := entry.FirstCluster
+	currentCluster := entry.first_cluster
 	var data []byte
 	for currentCluster != FAT_EOF {
-		data = append(data, fs.ClusterData[currentCluster]...)
-		currentCluster = fs.FatTable[currentCluster]
+		data = append(data, fs.cluster_data[currentCluster]...)
+		currentCluster = fs.fat_table[currentCluster]
 	}
 
 	// Copy the file data to the destination
