@@ -16,20 +16,20 @@ type FAT [MAX_CLUSTER_COUNT]int
 
 // DirectoryEntry stores file metadata
 type DirectoryEntry struct {
-	Name         string
-	Size         int
-	FirstCluster int
-	IsDirectory  bool
+	name          string
+	size          int
+	first_cluster int
+	is_directory  bool
 }
 
 // FileSystem struct
 type FileSystem struct {
-	FatTable    FAT
-	Directory   map[string]DirectoryEntry
-	ClusterData [][]byte // Storage for the actual file data
+	fat_table    FAT
+	directory    map[string]DirectoryEntry
+	cluster_data [][]byte // Storage for the actual file data
 }
 
 type FileInfo struct {
-	Name string
-	Size int
+	name string
+	size int
 }
