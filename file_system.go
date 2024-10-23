@@ -10,7 +10,7 @@ import (
 // Initializes the file system
 func (fs *FileSystem) Init() {
 
-	fs.fat_table = [MAX_CLUSTER_COUNT]int{}
+	fs.fat_table = FAT{}
 
 	for i := range fs.fat_table {
 		fs.fat_table[i] = FAT_FREE
@@ -125,7 +125,7 @@ func (fs *FileSystem) Rm(filename string) error {
 	return nil
 }
 
-func SaveFileSystem(filename string, fs *FileSystem) {
+func SaveFileSystem(filename string, fs *FileSystem, cluster_count int) {
 
 	fmt.Printf("\nSaving file system...\n\n")
 
@@ -145,15 +145,21 @@ func SaveFileSystem(filename string, fs *FileSystem) {
 		}
 	}
 
+	fmt.Println("FAT table written successfully, size:", len(fs.fat_table))
+
 	// Write the directory
 	for name, entry := range fs.directory {
+
 		// Write the file name as a fixed 12-byte field (8.3 filename format)
 		nameBytes := make([]byte, MAX_FILE_NAME)
 		copy(nameBytes, name) // Copy the file name to the fixed-length byte slice
+
 		_, err = file.Write(nameBytes)
 		if err != nil {
 			return
 		}
+
+		fmt.Println("Writing file name with size:", len(nameBytes))
 
 		// Write the file size as a 4-byte integer
 		err = binary.Write(file, binary.LittleEndian, int32(entry.size))
@@ -161,19 +167,60 @@ func SaveFileSystem(filename string, fs *FileSystem) {
 			return
 		}
 
+		fmt.Println("Writing entry size with size:", entry.size)
+
 		// Write the first cluster as a 4-byte integer
 		err = binary.Write(file, binary.LittleEndian, int32(entry.first_cluster))
 		if err != nil {
 			return
 		}
+
+		fmt.Println("Writing first cluster with size:", entry.first_cluster)
+
 	}
 
 	// Write the cluster data
-	for _, data := range fs.cluster_data {
-		_, err = file.Write(data)
-		if err != nil {
-			fmt.Println("Error writing to file:", err)
-			return
+	// for _, data := range fs.cluster_data {
+	// 	_, err = file.Write(data)
+	// 	if err != nil {
+	// 		fmt.Println("Error writing to file:", err)
+	// 		return
+	// 	}
+	// }
+
+	// Write the cluster data for the used clusters only
+	// for i := 0; i < cluster_count; i++ { // Use the correct number of clusters
+	// 	_, err = file.Write(fs.cluster_data[i])
+	// 	if err != nil {
+	// 		fmt.Println("Error writing to file:", err)
+	// 		return
+	// 	}
+	// }
+
+	// Write the cluster data for the used clusters only
+	for _, entry := range fs.directory {
+		numClusters := (entry.size + CLUSTER_SIZE - 1) / CLUSTER_SIZE // Calculate the total number of clusters needed for this file
+		for i := 0; i < numClusters; i++ {
+			// Determine the size of data to write for the last cluster
+			var bytesToWrite int
+			if i == numClusters-1 { // If this is the last cluster
+				bytesToWrite = entry.size % CLUSTER_SIZE
+				if bytesToWrite == 0 && i > 0 { // If perfectly divisible, write full last cluster
+					bytesToWrite = CLUSTER_SIZE
+				}
+			} else {
+				bytesToWrite = CLUSTER_SIZE // Full cluster for non-last clusters
+			}
+
+			// Write the data for the current cluster
+			clusterIndex := entry.first_cluster + i
+			if clusterIndex < len(fs.cluster_data) {
+				_, err = file.Write(fs.cluster_data[clusterIndex][:bytesToWrite])
+				if err != nil {
+					fmt.Println("Error writing to file:", err)
+					return
+				}
+			}
 		}
 	}
 
@@ -273,13 +320,34 @@ func FormatFile(filename string, fileSize int64) {
 		cluster_count = MAX_CLUSTER_COUNT
 	}
 
+	fmt.Printf("Formatting file system with %d clusters...\n", cluster_count)
+
 	// Calculate the size of the FAT in bytes and the number of clusters it occupies
 	fat_size := cluster_count * FAT_ENTRY
 	fat_cluster_count := (fat_size + CLUSTER_SIZE - 1) / CLUSTER_SIZE
 
+	fmt.Printf("FAT size: %d bytes\nFAT clusters: %d\n", fat_size, fat_cluster_count)
+
 	// Initialize the file system's FAT and cluster data for the given size
+	fs.fat_table = FAT{}
+	fs.cluster_data = make([][]byte, cluster_count)
+
 	for i := 0; i < cluster_count; i++ {
 		fs.fat_table[i] = FAT_FREE
+		fs.cluster_data[i] = make([]byte, CLUSTER_SIZE)
+	}
+
+	// Set the FAT links (this is crucial for file system structure)
+	for i := 0; i < cluster_count-1; i++ {
+		fs.fat_table[i] = i + 1 // Link to the next cluster
+	}
+	fs.fat_table[cluster_count-1] = FAT_EOF // Mark the last cluster as EOF
+
+	// Add the file entry to the directory
+	fs.directory[filename] = DirectoryEntry{
+		name:          filename,
+		size:          int(fileSize), // Set the correct size
+		first_cluster: 0,             // The first cluster is 0 if data starts here
 	}
 
 	// Set the starting addresses for FAT1, FAT2, and data section (optional)
@@ -290,7 +358,7 @@ func FormatFile(filename string, fileSize int64) {
 	fmt.Printf("FAT1 starts at: %d\nFAT2 starts at: %d\nData starts at: %d\n", fat1_start, fat2_start, data_start)
 
 	// Save the initialized file system to the file
-	SaveFileSystem(filename, fs)
+	SaveFileSystem(filename, fs, cluster_count)
 	// err = SaveFileSystem(filename, fs)
 	// if err != nil {
 	// 	fmt.Println("Error saving file system:", err)
