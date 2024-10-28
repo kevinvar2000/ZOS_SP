@@ -27,7 +27,7 @@ func PrintHelp() {
 
 func FormatFileCmd(filename string) {
 	// File doesn't exist, ask for the file size and create it
-	var fileSize int64 // TODO: Change to bytes
+	var fileSize int
 	fmt.Print("Enter the desired file size in bytes: ")
 	fmt.Scanln(&fileSize)
 
