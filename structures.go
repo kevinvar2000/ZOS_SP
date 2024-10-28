@@ -10,6 +10,17 @@ const (
 	FAT_EOF           = -1   // FAT end of file marker
 )
 
+// FileSystemFormat struct to store file system metadata
+type FileSystemFormat struct {
+	FileSize        int32
+	FATSize         int32
+	FATClusterCount int32
+	ClusterCount    int32
+	FAT1Start       int32
+	FAT2Start       int32
+	DataStart       int32
+}
+
 // FAT entry struct to simulate FAT table
 type FAT []int
 
