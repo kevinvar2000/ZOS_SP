@@ -11,7 +11,7 @@ const (
 )
 
 // FAT entry struct to simulate FAT table
-type FAT [MAX_CLUSTER_COUNT]int
+type FAT []int
 
 // DirectoryEntry stores file metadata
 type DirectoryEntry struct {
