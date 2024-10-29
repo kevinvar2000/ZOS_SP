@@ -128,6 +128,7 @@ func checkFile(filename string) {
 		} else {
 			fmt.Println("File name:", filename)
 			fmt.Printf("File size: %d bytes\n", info.Size())
+			LoadFormatFile(filename)
 		}
 
 	} else if os.IsNotExist(err) {
