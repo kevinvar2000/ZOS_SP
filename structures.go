@@ -12,13 +12,13 @@ const (
 
 // FileSystemFormat struct to store file system metadata
 type FileSystemFormat struct {
-	FileSize        int32
-	FATSize         int32
-	FATClusterCount int32
-	ClusterCount    int32
-	FAT1Start       int32
-	FAT2Start       int32
-	DataStart       int32
+	file_size         int32
+	fat_size          int32
+	fat_cluster_count int32
+	cluster_count     int32
+	fat1_start        int32
+	fat2_start        int32
+	data_start        int32
 }
 
 // FAT entry struct to simulate FAT table

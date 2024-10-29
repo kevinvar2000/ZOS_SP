@@ -307,7 +307,7 @@ func LoadFileSystem(filename string) *FileSystem {
 	return fs
 }
 
-func SaveFormatFile(filename string, file_size int, fat_size int, fat_cluster_count int, cluster_count int, fat1_start int, fat2_start int, data_start int) {
+func SaveFormatFile(filename string, fs_format FileSystemFormat) {
 	fmt.Printf("\nSaving format of the file system to '%s'...\n", filename)
 
 	// Open the file for writing
@@ -319,70 +319,72 @@ func SaveFormatFile(filename string, file_size int, fat_size int, fat_cluster_co
 	defer file.Close()
 
 	// Write the file size
-	err = binary.Write(file, binary.LittleEndian, int32(file_size))
+	err = binary.Write(file, binary.LittleEndian, int32(fs_format.file_size))
 	if err != nil {
 		fmt.Println("Error writing file size:", err)
 		return
 	}
-	fmt.Printf("File size written: %d bytes\n", file_size)
+	fmt.Printf("File size written: %d bytes\n", fs_format.file_size)
 
 	// Write the FAT size
-	err = binary.Write(file, binary.LittleEndian, int32(fat_size))
+	err = binary.Write(file, binary.LittleEndian, int32(fs_format.fat_size))
 	if err != nil {
 		fmt.Println("Error writing FAT size:", err)
 		return
 	}
-	fmt.Printf("FAT size written: %d bytes\n", fat_size)
+	fmt.Printf("FAT size written: %d bytes\n", fs_format.fat_size)
 
 	// Write the number of FAT clusters
-	err = binary.Write(file, binary.LittleEndian, int32(fat_cluster_count))
+	err = binary.Write(file, binary.LittleEndian, int32(fs_format.fat_cluster_count))
 	if err != nil {
 		fmt.Println("Error writing FAT cluster count:", err)
 		return
 	}
-	fmt.Printf("FAT cluster count written: %d\n", fat_cluster_count)
+	fmt.Printf("FAT cluster count written: %d\n", fs_format.fat_cluster_count)
 
 	// Write the total number of data clusters
-	err = binary.Write(file, binary.LittleEndian, int32(cluster_count))
+	err = binary.Write(file, binary.LittleEndian, int32(fs_format.cluster_count))
 	if err != nil {
 		fmt.Println("Error writing cluster count:", err)
 		return
 	}
-	fmt.Printf("Cluster count written: %d\n", cluster_count)
+	fmt.Printf("Cluster count written: %d\n", fs_format.cluster_count)
 
 	// Write the starting positions
-	err = binary.Write(file, binary.LittleEndian, int32(fat1_start))
+	err = binary.Write(file, binary.LittleEndian, int32(fs_format.fat1_start))
 	if err != nil {
 		fmt.Println("Error writing FAT1 start position:", err)
 		return
 	}
-	fmt.Printf("FAT1 starts at: %d\n", fat1_start)
+	fmt.Printf("FAT1 starts at: %d\n", fs_format.fat1_start)
 
-	err = binary.Write(file, binary.LittleEndian, int32(fat2_start))
+	err = binary.Write(file, binary.LittleEndian, int32(fs_format.fat2_start))
 	if err != nil {
 		fmt.Println("Error writing FAT2 start position:", err)
 		return
 	}
-	fmt.Printf("FAT2 starts at: %d\n", fat2_start)
+	fmt.Printf("FAT2 starts at: %d\n", fs_format.fat2_start)
 
-	err = binary.Write(file, binary.LittleEndian, int32(data_start))
+	err = binary.Write(file, binary.LittleEndian, int32(fs_format.data_start))
 	if err != nil {
 		fmt.Println("Error writing data start position:", err)
 		return
 	}
-	fmt.Printf("Data starts at: %d\n", data_start)
+	fmt.Printf("Data starts at: %d\n", fs_format.data_start)
 
 	fmt.Println("File system format saved successfully!")
 }
 
-func LoadFormatFile(filename string) (int, int, int, int, int, int, int) {
+func LoadFormatFile(filename string) FileSystemFormat {
 	fmt.Printf("\nLoading format of the file system from '%s'...\n", filename)
+
+	fs_format := FileSystemFormat{}
 
 	// Open the file for reading
 	file, err := os.Open(filename)
 	if err != nil {
 		fmt.Println("Error opening file:", err)
-		return 0, 0, 0, 0, 0, 0, 0
+		return FileSystemFormat{}
 	}
 	defer file.Close()
 
@@ -391,7 +393,7 @@ func LoadFormatFile(filename string) (int, int, int, int, int, int, int) {
 	err = binary.Read(file, binary.LittleEndian, &file_size)
 	if err != nil {
 		fmt.Println("Error reading file size:", err)
-		return 0, 0, 0, 0, 0, 0, 0
+		return FileSystemFormat{}
 	}
 	fmt.Printf("File size read: %d bytes\n", file_size)
 
@@ -400,7 +402,7 @@ func LoadFormatFile(filename string) (int, int, int, int, int, int, int) {
 	err = binary.Read(file, binary.LittleEndian, &fat_size)
 	if err != nil {
 		fmt.Println("Error reading FAT size:", err)
-		return 0, 0, 0, 0, 0, 0, 0
+		return FileSystemFormat{}
 	}
 	fmt.Printf("FAT size read: %d bytes\n", fat_size)
 
@@ -409,7 +411,7 @@ func LoadFormatFile(filename string) (int, int, int, int, int, int, int) {
 	err = binary.Read(file, binary.LittleEndian, &fat_cluster_count)
 	if err != nil {
 		fmt.Println("Error reading FAT cluster count:", err)
-		return 0, 0, 0, 0, 0, 0, 0
+		return FileSystemFormat{}
 	}
 	fmt.Printf("FAT cluster count read: %d\n", fat_cluster_count)
 
@@ -418,7 +420,7 @@ func LoadFormatFile(filename string) (int, int, int, int, int, int, int) {
 	err = binary.Read(file, binary.LittleEndian, &cluster_count)
 	if err != nil {
 		fmt.Println("Error reading cluster count:", err)
-		return 0, 0, 0, 0, 0, 0, 0
+		return FileSystemFormat{}
 	}
 	fmt.Printf("Cluster count read: %d\n", cluster_count)
 
@@ -427,7 +429,7 @@ func LoadFormatFile(filename string) (int, int, int, int, int, int, int) {
 	err = binary.Read(file, binary.LittleEndian, &fat1_start)
 	if err != nil {
 		fmt.Println("Error reading FAT1 start position:", err)
-		return 0, 0, 0, 0, 0, 0, 0
+		return FileSystemFormat{}
 	}
 	fmt.Printf("FAT1 starts at: %d\n", fat1_start)
 
@@ -435,7 +437,7 @@ func LoadFormatFile(filename string) (int, int, int, int, int, int, int) {
 	err = binary.Read(file, binary.LittleEndian, &fat2_start)
 	if err != nil {
 		fmt.Println("Error reading FAT2 start position:", err)
-		return 0, 0, 0, 0, 0, 0, 0
+		return FileSystemFormat{}
 	}
 	fmt.Printf("FAT2 starts at: %d\n", fat2_start)
 
@@ -443,12 +445,12 @@ func LoadFormatFile(filename string) (int, int, int, int, int, int, int) {
 	err = binary.Read(file, binary.LittleEndian, &data_start)
 	if err != nil {
 		fmt.Println("Error reading data start position:", err)
-		return 0, 0, 0, 0, 0, 0, 0
+		return FileSystemFormat{}
 	}
 	fmt.Printf("Data starts at: %d\n", data_start)
 
 	fmt.Println("File system format loaded successfully!")
-	return int(file_size), int(fat_size), int(fat_cluster_count), int(cluster_count), int(fat1_start), int(fat2_start), int(data_start)
+	return fs_format
 }
 
 // Format the file with the desired size
@@ -498,7 +500,17 @@ func FormatFile(filename string, file_size int) {
 
 	fmt.Printf("FAT1 starts at: %d\nFAT2 starts at: %d\nData starts at: %d\n", fat1_start, fat2_start, data_start)
 
-	SaveFormatFile(filename, file_size, fat_size, fat_cluster_count, cluster_count, fat1_start, fat2_start, data_start)
+	fs_format := FileSystemFormat{
+		file_size:         int32(file_size),
+		fat_size:          int32(fat_size),
+		fat_cluster_count: int32(fat_cluster_count),
+		cluster_count:     int32(cluster_count),
+		fat1_start:        int32(fat1_start),
+		fat2_start:        int32(fat2_start),
+		data_start:        int32(data_start),
+	}
+
+	SaveFormatFile(filename, fs_format)
 
 	fmt.Println("File system formatted and saved successfully!")
 	fmt.Println()
