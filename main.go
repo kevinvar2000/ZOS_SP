@@ -173,19 +173,17 @@ func main() {
 	// Once a valid filename is provided
 	fmt.Printf("File '%s' has a valid extension. Proceeding...\n\n", filename)
 
+	// Check the file
+	fmt.Println()
 	checkFile(filename)
 
-	// Load the file system from the file
-	// fs = LoadFileSystem(filename)
-
-	// if fs == nil {
-	// 	fmt.Println("Error loading file system")
-	// 	fmt.Println("Creating a new file system")
-	// }
-
-	// Check file again
+	// Check the file again
+	fmt.Println()
 	fmt.Println("Checking the file system again without load...")
 	checkFile(filename)
+
+	// Load the file system
+	LoadFileSystem(filename)
 
 	// enterCommand()
 
