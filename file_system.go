@@ -125,113 +125,85 @@ func (fs *FileSystem) Rm(filename string) error {
 	return nil
 }
 
-func SaveFileSystem(filename string, fs *FileSystem) {
+func SaveFileSystem(filename string, fs *FileSystem, fs_format FileSystemFormat) error {
 
-	fmt.Printf("\nSaving file system...\n\n")
+	fmt.Printf("\nSaving file system to '%s'...\n", filename)
 
-	file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		fmt.Println("Error opening file:", err)
-		return
+		return fmt.Errorf("error opening file: %w", err)
 	}
 	defer file.Close()
 
-	// Write the FAT table
+	// **Write FAT1 table at fat1_start position**
+	fmt.Println("Seeking to FAT1 start position:", fs_format.fat1_start)
+	_, err = file.Seek(int64(fs_format.fat1_start), 0)
+	if err != nil {
+		return fmt.Errorf("error seeking to FAT1 start: %w", err)
+	}
 	for _, val := range fs.fat_table {
 		err = binary.Write(file, binary.LittleEndian, int32(val))
 		if err != nil {
-			fmt.Println("Error writing to file:", err)
-			return
+			return fmt.Errorf("error writing FAT1 table: %w", err)
+		}
+	}
+	fmt.Println("FAT1 table written successfully")
+
+	// **Write FAT2 table at fat2_start position**
+	fmt.Println("Seeking to FAT2 start position:", fs_format.fat2_start)
+	_, err = file.Seek(int64(fs_format.fat2_start), 0)
+
+	if err != nil {
+		return fmt.Errorf("error seeking to FAT2 start: %w", err)
+	}
+
+	for _, val := range fs.fat_table {
+		err = binary.Write(file, binary.LittleEndian, int32(val))
+		if err != nil {
+			return fmt.Errorf("error writing FAT2 table: %w", err)
 		}
 	}
 
-	fmt.Println("FAT table written successfully, size:", len(fs.fat_table))
+	fmt.Println("FAT2 table written successfully")
 
-	// Write the directory
-	for name, entry := range fs.directory {
-
-		// Write the file name as a fixed 12-byte field (8.3 filename format)
-		nameBytes := make([]byte, MAX_FILE_NAME)
-		copy(nameBytes, name) // Copy the file name to the fixed-length byte slice
-
-		_, err = file.Write(nameBytes)
-		if err != nil {
-			return
-		}
-
-		fmt.Println("Writing file name with size:", len(nameBytes))
-
-		// Write the file size as a 4-byte integer
-		err = binary.Write(file, binary.LittleEndian, int32(entry.size))
-		if err != nil {
-			return
-		}
-
-		fmt.Println("Writing entry size with size:", entry.size)
-
-		// Write the first cluster as a 4-byte integer
-		err = binary.Write(file, binary.LittleEndian, int32(entry.first_cluster))
-		if err != nil {
-			return
-		}
-
-		fmt.Println("Writing first cluster with size:", entry.first_cluster)
-
+	// **Zero out the data starting at data_start**
+	fmt.Println("Seeking to data start position:", fs_format.data_start)
+	_, err = file.Seek(int64(fs_format.data_start), 0)
+	if err != nil {
+		return fmt.Errorf("error seeking to data start: %w", err)
 	}
 
-	// Write the cluster data
-	// for _, data := range fs.cluster_data {
-	// 	_, err = file.Write(data)
-	// 	if err != nil {
-	// 		fmt.Println("Error writing to file:", err)
-	// 		return
-	// 	}
-	// }
-
-	// Write the cluster data for the used clusters only
-	// for i := 0; i < cluster_count; i++ { // Use the correct number of clusters
-	// 	_, err = file.Write(fs.cluster_data[i])
-	// 	if err != nil {
-	// 		fmt.Println("Error writing to file:", err)
-	// 		return
-	// 	}
-	// }
-
-	// Write the cluster data for the used clusters only
-	for _, entry := range fs.directory {
-		numClusters := (entry.size + CLUSTER_SIZE - 1) / CLUSTER_SIZE // Calculate the total number of clusters needed for this file
-		for i := 0; i < numClusters; i++ {
-			// Determine the size of data to write for the last cluster
-			var bytesToWrite int
-			if i == numClusters-1 { // If this is the last cluster
-				bytesToWrite = entry.size % CLUSTER_SIZE
-				if bytesToWrite == 0 && i > 0 { // If perfectly divisible, write full last cluster
-					bytesToWrite = CLUSTER_SIZE
-				}
-			} else {
-				bytesToWrite = CLUSTER_SIZE // Full cluster for non-last clusters
-			}
-
-			// Write the data for the current cluster
-			clusterIndex := entry.first_cluster + i
-			if clusterIndex < len(fs.cluster_data) {
-				_, err = file.Write(fs.cluster_data[clusterIndex][:bytesToWrite])
-				if err != nil {
-					fmt.Println("Error writing to file:", err)
-					return
-				}
-			}
-		}
+	// **Zero out the data starting at data_start**
+	fmt.Println("Zeroing out data section...")
+	remainingSize := fs_format.file_size - fs_format.data_start
+	zeroBuffer := make([]byte, remainingSize) // Create a buffer filled with zeros
+	fmt.Println("Zero buffer size:", len(zeroBuffer))
+	fmt.Println("Seeking to data start position:", fs_format.data_start)
+	_, err = file.Seek(int64(fs_format.data_start), 0)
+	if err != nil {
+		return fmt.Errorf("error seeking to data start: %w", err)
+	}
+	_, err = file.Write(zeroBuffer)
+	if err != nil {
+		return fmt.Errorf("error writing zeros to data section: %w", err)
 	}
 
+	fmt.Println("Data section zeroed out successfully")
 	fmt.Println("File system saved successfully!")
-
+	return nil
 }
 
 func LoadFileSystem(filename string) *FileSystem {
+	fmt.Printf("\nLoading file system from '%s'...\n", filename)
 
-	fmt.Printf("\nLoading file system...\n\n")
+	// Load the format file first to get the necessary information
+	fs_format := LoadFormatFile(filename)
+	if fs_format.file_size == 0 {
+		fmt.Println("Format file is empty or could not be read.")
+		return nil
+	}
 
+	// Now we can open the file and read the file system data
 	file, err := os.Open(filename)
 	if err != nil {
 		fmt.Println("Error opening file:", err)
@@ -239,28 +211,29 @@ func LoadFileSystem(filename string) *FileSystem {
 	}
 	defer file.Close()
 
-	// Check file size
-	_, err = file.Stat()
-	if err != nil {
-		fmt.Println("Error file stat:", err)
-		return nil
-	}
-
 	fs := &FileSystem{}
 	fs.Init()
 
 	// Read the FAT table
+	fmt.Printf("Reading FAT table of size %d bytes...\n", fs_format.fat_size)
+	_, err = file.Seek(int64(fs_format.fat1_start), 0) // Seek to FAT1 start
+	if err != nil {
+		fmt.Println("Error seeking to FAT1 start:", err)
+		return nil
+	}
 	for i := range fs.fat_table {
-		var val byte
-		_, err = file.Read([]byte{val})
+		var val int32
+		err = binary.Read(file, binary.LittleEndian, &val)
 		if err != nil {
-			fmt.Println("Error reading file:", err)
+			fmt.Println("Error reading FAT table:", err)
 			return nil
 		}
 		fs.fat_table[i] = int(val)
 	}
+	fmt.Println("FAT table loaded successfully.")
 
-	// Read the directory
+	// Read the directory (Assuming a structure for your directory)
+	fmt.Println("Reading directory entries...")
 	for {
 		var name string
 		for {
@@ -270,38 +243,40 @@ func LoadFileSystem(filename string) *FileSystem {
 				fmt.Println("Error reading file:", err)
 				return nil
 			}
-			if b == 0 {
+			if b == 0 { // Null terminator indicates end of name
 				break
 			}
 			name += string(b)
 		}
 		if name == "" {
-			break
+			break // Exit if no name found
 		}
 
 		var entry DirectoryEntry
-		entry.name = name
-		_, err = file.Read([]byte{byte(entry.size)})
+		err = binary.Read(file, binary.LittleEndian, &entry.size)
 		if err != nil {
-			fmt.Println("Error reading file:", err)
+			fmt.Println("Error reading entry size:", err)
 			return nil
 		}
-		_, err = file.Read([]byte{byte(entry.first_cluster)})
+		err = binary.Read(file, binary.LittleEndian, &entry.first_cluster)
 		if err != nil {
-			fmt.Println("Error reading file:", err)
+			fmt.Println("Error reading entry first cluster:", err)
 			return nil
 		}
 		fs.directory[name] = entry
 	}
+	fmt.Println("Directory loaded successfully.")
 
-	// Read the cluster data
-	for i := range fs.cluster_data {
+	// Read the cluster data based on total cluster count
+	fmt.Printf("Reading cluster data...\n")
+	for i := 0; i < int(fs_format.cluster_count); i++ {
 		_, err = file.Read(fs.cluster_data[i])
 		if err != nil {
-			fmt.Println("Error reading file:", err)
+			fmt.Println("Error reading cluster data:", err)
 			return nil
 		}
 	}
+	fmt.Println("Cluster data loaded successfully.")
 
 	fmt.Println("File system loaded successfully!")
 	return fs
@@ -311,7 +286,7 @@ func SaveFormatFile(filename string, fs_format FileSystemFormat) {
 	fmt.Printf("\nSaving format of the file system to '%s'...\n", filename)
 
 	// Open the file for writing
-	file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		fmt.Println("Error opening file:", err)
 		return
@@ -378,6 +353,7 @@ func SaveFormatFile(filename string, fs_format FileSystemFormat) {
 func LoadFormatFile(filename string) FileSystemFormat {
 	fmt.Printf("\nLoading format of the file system from '%s'...\n", filename)
 
+	// Initialize the FileSystemFormat struct
 	fs_format := FileSystemFormat{}
 
 	// Open the file for reading
@@ -389,65 +365,58 @@ func LoadFormatFile(filename string) FileSystemFormat {
 	defer file.Close()
 
 	// Read the file size
-	var file_size int32
-	err = binary.Read(file, binary.LittleEndian, &file_size)
+	err = binary.Read(file, binary.LittleEndian, &fs_format.file_size)
 	if err != nil {
 		fmt.Println("Error reading file size:", err)
 		return FileSystemFormat{}
 	}
-	fmt.Printf("File size read: %d bytes\n", file_size)
+	fmt.Printf("File size read: %d bytes\n", fs_format.file_size)
 
 	// Read the FAT size
-	var fat_size int32
-	err = binary.Read(file, binary.LittleEndian, &fat_size)
+	err = binary.Read(file, binary.LittleEndian, &fs_format.fat_size)
 	if err != nil {
 		fmt.Println("Error reading FAT size:", err)
 		return FileSystemFormat{}
 	}
-	fmt.Printf("FAT size read: %d bytes\n", fat_size)
+	fmt.Printf("FAT size read: %d bytes\n", fs_format.fat_size)
 
 	// Read the number of FAT clusters
-	var fat_cluster_count int32
-	err = binary.Read(file, binary.LittleEndian, &fat_cluster_count)
+	err = binary.Read(file, binary.LittleEndian, &fs_format.fat_cluster_count)
 	if err != nil {
 		fmt.Println("Error reading FAT cluster count:", err)
 		return FileSystemFormat{}
 	}
-	fmt.Printf("FAT cluster count read: %d\n", fat_cluster_count)
+	fmt.Printf("FAT cluster count read: %d\n", fs_format.fat_cluster_count)
 
 	// Read the total number of data clusters
-	var cluster_count int32
-	err = binary.Read(file, binary.LittleEndian, &cluster_count)
+	err = binary.Read(file, binary.LittleEndian, &fs_format.cluster_count)
 	if err != nil {
 		fmt.Println("Error reading cluster count:", err)
 		return FileSystemFormat{}
 	}
-	fmt.Printf("Cluster count read: %d\n", cluster_count)
+	fmt.Printf("Cluster count read: %d\n", fs_format.cluster_count)
 
 	// Read the starting positions
-	var fat1_start int32
-	err = binary.Read(file, binary.LittleEndian, &fat1_start)
+	err = binary.Read(file, binary.LittleEndian, &fs_format.fat1_start)
 	if err != nil {
 		fmt.Println("Error reading FAT1 start position:", err)
 		return FileSystemFormat{}
 	}
-	fmt.Printf("FAT1 starts at: %d\n", fat1_start)
+	fmt.Printf("FAT1 starts at: %d\n", fs_format.fat1_start)
 
-	var fat2_start int32
-	err = binary.Read(file, binary.LittleEndian, &fat2_start)
+	err = binary.Read(file, binary.LittleEndian, &fs_format.fat2_start)
 	if err != nil {
 		fmt.Println("Error reading FAT2 start position:", err)
 		return FileSystemFormat{}
 	}
-	fmt.Printf("FAT2 starts at: %d\n", fat2_start)
+	fmt.Printf("FAT2 starts at: %d\n", fs_format.fat2_start)
 
-	var data_start int32
-	err = binary.Read(file, binary.LittleEndian, &data_start)
+	err = binary.Read(file, binary.LittleEndian, &fs_format.data_start)
 	if err != nil {
 		fmt.Println("Error reading data start position:", err)
 		return FileSystemFormat{}
 	}
-	fmt.Printf("Data starts at: %d\n", data_start)
+	fmt.Printf("Data starts at: %d\n", fs_format.data_start)
 
 	fmt.Println("File system format loaded successfully!")
 	return fs_format
@@ -485,7 +454,7 @@ func FormatFile(filename string, file_size int) {
 
 	// Initialize the directory
 	fs.directory = make(map[string]DirectoryEntry)
-	// TODO: move to the inti, to this point
+	// TODO: move to the init, to this point
 
 	fmt.Println()
 	fmt.Println("FAT table size:", len(fs.fat_table))
@@ -511,6 +480,13 @@ func FormatFile(filename string, file_size int) {
 	}
 
 	SaveFormatFile(filename, fs_format)
+
+	// Save the file system to the file
+	err := SaveFileSystem(filename, fs, fs_format)
+	if err != nil {
+		fmt.Println("Error saving file system:", err)
+		return
+	}
 
 	fmt.Println("File system formatted and saved successfully!")
 	fmt.Println()
