@@ -169,9 +169,6 @@ func main() {
 		// return
 	}
 
-	// Once a valid filename is provided
-	fmt.Printf("File '%s' has a valid extension. Proceeding...\n\n", filename)
-
 	checkFile(filename)
 
 	// enterCommand()
