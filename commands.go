@@ -26,15 +26,7 @@ func PrintHelp() {
 }
 
 func FormatFileCmd(filename string) {
-	// File doesn't exist, ask for the file size and create it
-	var fileSize int
-	fmt.Print("Enter the desired file size in bytes: ")
-	fmt.Scanln(&fileSize)
-
-	FormatFile(filename, fileSize)
-
-	// The FAT and directory have been initialized and saved
-	fmt.Println("File system formatted successfully!")
+	// todo: implement this function
 }
 
 func LoadFile(filename string) {
