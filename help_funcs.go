@@ -15,9 +15,12 @@ func WriteToFile(file *os.File, value int32) {
 
 }
 
-func ReadFromFile(filename string) []byte {
-	// Read data from the file
-	return nil
+func ReadFromFile(file *os.File, value *int32) {
+
+	err := binary.Read(file, binary.LittleEndian, &value)
+	if err != nil {
+		fmt.Println("Error reading from file:", err)
+	}
 }
 
 // Helper function to get minimum value
