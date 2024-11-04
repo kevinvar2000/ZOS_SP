@@ -6,8 +6,8 @@ const (
 	FAT_ENTRY         = 4    // FAT entry size in bytes
 	MAX_FILE_NAME     = 12   // 8.3 format = 11 chars + null terminator
 	MAX_CLUSTER_COUNT = 1024 // Max number of clusters in the file system
-	FAT_FREE          = 0    // FAT free cluster marker
-	FAT_EOF           = -1   // FAT end of file marker
+	FAT_FREE          = -1   // FAT free cluster marker
+	FAT_EOF           = -2   // FAT end of file marker
 )
 
 // FileSystemFormat struct to store file system metadata
