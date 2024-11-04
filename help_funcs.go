@@ -17,7 +17,7 @@ func WriteToFile(file *os.File, value int32) {
 
 func ReadFromFile(file *os.File, value *int32) {
 
-	err := binary.Read(file, binary.LittleEndian, &value)
+	err := binary.Read(file, binary.LittleEndian, value)
 	if err != nil {
 		fmt.Println("Error reading from file:", err)
 	}
