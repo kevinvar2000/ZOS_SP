@@ -126,19 +126,21 @@ func checkFile(filename string) {
 		if info.Size() == 0 {
 			fmt.Println("File is empty.")
 		} else {
-			fmt.Println("File name:", filename)
-			fmt.Printf("File size: %d bytes\n", info.Size())
-			LoadFormatFile(filename)
+			// Load the file system
+			fs := LoadFileSystem(filename)
+
+			// Print the file system information
+			PrintFileSystem(fs, "fs_after_load.txt")
 		}
 
 	} else if os.IsNotExist(err) {
 
-		fmt.Println("File does not exist. Formatting a new file system...")
+		fmt.Printf("\nFile does not exist. Formatting a new file system...\n")
 
 		// Format the file with the desired size
-		FormatFileCmd(filename)
+		FSFormatFile(filename)
 
-		fmt.Println("File created successfully!")
+		fmt.Printf("File created successfully!\n\n")
 
 	} else {
 
@@ -149,9 +151,6 @@ func checkFile(filename string) {
 }
 
 func main() {
-
-	fs := &FileSystem{}
-	fs.Init()
 
 	fmt.Printf("Welcome to the file system simulator\n")
 	fmt.Printf("KIV/ZOS - SP 2024; Author: Kevin Varchola\n\n")
@@ -173,17 +172,7 @@ func main() {
 	// Once a valid filename is provided
 	fmt.Printf("File '%s' has a valid extension. Proceeding...\n\n", filename)
 
-	// Check the file
-	fmt.Println()
 	checkFile(filename)
-
-	// Check the file again
-	fmt.Println()
-	fmt.Println("Checking the file system again without load...")
-	checkFile(filename)
-
-	// Load the file system
-	LoadFileSystem(filename)
 
 	// enterCommand()
 
