@@ -133,7 +133,7 @@ func checkFile(filename string) {
 		fmt.Printf("\nFile does not exist. Formatting a new file system...\n")
 
 		// Format the file with the desired size
-		FSFormatFile(filename)
+		Format(filename)
 
 		fmt.Printf("File created successfully!\n\n")
 
