@@ -30,15 +30,3 @@ type DirectoryEntry struct {
 	first_cluster int
 	is_directory  bool
 }
-
-// FileSystem struct
-type FileSystem struct {
-	fat_table    FAT
-	directory    map[string]DirectoryEntry
-	cluster_data [][]byte // Storage for the actual file data
-}
-
-type FileInfo struct {
-	name string
-	size int
-}

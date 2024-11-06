@@ -6,9 +6,6 @@ import (
 	"strings"
 )
 
-var currentPath string = "/" // Assume a simple path system
-var fs *FileSystem           // Declare globally to use in all functions
-
 func enterCommand() {
 
 	for {
@@ -127,10 +124,8 @@ func checkFile(filename string) {
 			fmt.Println("File is empty.")
 		} else {
 			// Load the file system
-			fs := LoadFileSystem(filename)
+			LoadFileSystem(filename)
 
-			// Print the file system information
-			PrintFileSystem(fs, "fs_after_load.txt")
 		}
 
 	} else if os.IsNotExist(err) {
