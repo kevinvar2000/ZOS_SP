@@ -58,7 +58,7 @@ func SaveFileSystem(filename string, fs_format FileSystemFormat, fat1, fat2 FAT)
 	return nil
 }
 
-func LoadFileSystem(filename string) {
+func LoadFileSystem(filename string) (FAT, FAT) {
 
 	fmt.Printf("\nLoading file system from '%s'...\n", filename)
 
@@ -66,25 +66,25 @@ func LoadFileSystem(filename string) {
 	fs_format := LoadFormat(filename)
 	if fs_format.file_size == 0 {
 		fmt.Println("Format file is empty or could not be read.")
-		return
+		return nil, nil
 	}
 
 	// **Open the file for reading**
 	file, err := os.Open(filename)
 	if err != nil {
 		fmt.Println("Error opening file:", err)
-		return
+		return nil, nil
 	}
 	defer file.Close()
 
-	fat1 := getFAT(fs_format.fat_size)
-	fat2 := getFAT(fs_format.fat_size)
+	fat1 := make(FAT, fs_format.cluster_count)
+	fat2 := make(FAT, fs_format.cluster_count)
 
 	// **Read the FAT1 table from the file**
 	_, err = file.Seek(int64(fs_format.fat1_start), 0) // Seek to FAT1 start
 	if err != nil {
 		fmt.Println("Error seeking to FAT1 start:", err)
-		return
+		return nil, nil
 	}
 	for i := range fat1 {
 		var val int32
@@ -96,7 +96,7 @@ func LoadFileSystem(filename string) {
 	_, err = file.Seek(int64(fs_format.fat2_start), 0) // Seek to FAT2 start
 	if err != nil {
 		fmt.Println("Error seeking to FAT2 start:", err)
-		return
+		return nil, nil
 	}
 	for i := range fat2 {
 		var val int32
@@ -105,6 +105,23 @@ func LoadFileSystem(filename string) {
 	}
 
 	fmt.Println("File system loaded successfully!")
+
+	return fat1, fat2
+}
+
+func PrintFileSystem(fat1, fat2 FAT) {
+
+	// **Print the FAT tables**
+	fmt.Println("\nFAT1 Table:")
+	PrintFAT(fat1)
+	fmt.Println("\nFAT2 Table:")
+	PrintFAT(fat2)
+}
+
+func PrintFAT(fat1 FAT) {
+	for i, val := range fat1 {
+		fmt.Printf("%d: %d\n", i, val)
+	}
 }
 
 func SaveFormat(filename string, fs_format FileSystemFormat) {
@@ -193,23 +210,33 @@ func LoadFormat(filename string) FileSystemFormat {
 	return fs_format
 }
 
+func PrintFormat(fs_format FileSystemFormat) {
+	fmt.Printf("\nFile size: %d bytes\n", fs_format.file_size)
+	fmt.Printf("FAT size: %d bytes\n", fs_format.fat_size)
+	fmt.Printf("FAT cluster count: %d\n", fs_format.fat_cluster_count)
+	fmt.Printf("Cluster count: %d\n", fs_format.cluster_count)
+	fmt.Printf("FAT1 start: %d\n", fs_format.fat1_start)
+	fmt.Printf("FAT2 start: %d\n", fs_format.fat2_start)
+	fmt.Printf("Data start: %d\n", fs_format.data_start)
+}
+
 func Format(filename string) {
 
 	// **Prompt the user to enter the desired file size**
-	var file_size int
-	fmt.Print("Enter the desired file size in bytes: ")
-	fmt.Scanln(&file_size)
+	var file_size_mb int
+	fmt.Print("Enter the desired file size in MB: ")
+	fmt.Scanln(&file_size_mb)
 
-	file_size_mb := file_size * 1024 * 1024 // Convert to MB
+	file_size_bytes := file_size_mb * 1024 * 1024
 
 	// **Calculate the file system format**
-	fs_format := CalculateFS(file_size_mb)
+	fs_format := CalculateFS(file_size_bytes)
 
 	// **Save the file system format to the file**
 	SaveFormat(filename, fs_format)
 
-	fat1 := getFAT(fs_format.fat_size)
-	fat2 := getFAT(fs_format.fat_size)
+	fat1 := make(FAT, fs_format.cluster_count)
+	fat2 := make(FAT, fs_format.cluster_count)
 
 	// **Initialize the FAT table**
 	for i := range fat1 {
@@ -234,12 +261,18 @@ func Format(filename string) {
 		return
 	}
 
-	// **Create the root directory**
-	CreateRootDirectory(filename)
+	// **Find a free cluster for the root directory**
+	free_cluster, err := FindFreeCluster(filename)
+	if err != nil {
+		fmt.Println("Error finding free cluster:", err)
+		return
+	}
 
-	// **Create the "." and ".." directories**
-	CreateDirectory(filename, ".", 0)
-	CreateDirectory(filename, "..", 0)
+	// **Create the root directory**
+	CreateRootDirectory(filename, free_cluster)
+
+	// **Print the file system details**
+	PrintFileSystem(fat1, fat2)
 
 	fmt.Printf("File system formatted and saved successfully!\n\n")
 }
@@ -282,35 +315,7 @@ func CalculateFS(file_size int) FileSystemFormat {
 	return fs_format
 }
 
-func CreateDirectory(filename, dirName string, parentCluster int32) {
-
-	if dirName == "." || dirName == ".." || len(dirName) > MAX_FILE_NAME {
-		return
-	}
-
-	// Find a free cluster for the new directory
-	freeCluster, err := FindFreeCluster(filename)
-	if err != nil {
-		return
-	}
-
-	// Create the directory entry for the new directory
-	newDir := DirectoryEntry{
-		name:          dirName,
-		size:          0,
-		first_cluster: FAT_FREE,
-		is_directory:  true,
-	}
-
-	// Write the directory entry to the parent cluster
-	if err := WriteDirectoryItem(filename, parentCluster, newDir); err != nil {
-		return
-	}
-
-	fmt.Printf("Directory '%s' created at cluster %d.\n", dirName, freeCluster)
-}
-
-func WriteDirectoryItem(filename string, cluster int32, item DirectoryEntry) error {
+func WriteDirectoryEntry(filename string, cluster int32, item DirectoryEntry) error {
 	file, err := os.OpenFile(filename, os.O_RDWR, 0644)
 	if err != nil {
 		return fmt.Errorf("error opening file: %v", err)
@@ -356,45 +361,124 @@ func FindFreeCluster(filename string) (int32, error) {
 	}
 }
 
-func CreateRootDirectory(filename string) {
+func CreateRootDirectory(filename string, free_cluster int32) {
 
 	// **Create the root directory entry**
 	rootDir := DirectoryEntry{
 		name:          "/",
 		size:          0,
-		first_cluster: 0,
+		first_cluster: int(free_cluster),
 		is_directory:  true,
 	}
 
 	// **Write the root directory entry to the file**
-	err := WriteDirectoryItem(filename, 0, rootDir)
+	err := WriteDirectoryEntry(filename, free_cluster, rootDir)
 	if err != nil {
 		fmt.Println("Error writing root directory:", err)
 		return
 	}
 
-	fmt.Println("Root directory created successfully!")
-
 	// **Update the FAT entry for the root directory**
-	err = UpdateFatEntry(filename, 0, FAT_EOF)
+	err = UpdateFatEntry(filename, free_cluster, FAT_EOF)
 	if err != nil {
 		fmt.Println("Error updating FAT entry for root directory:", err)
 		return
 	}
 
-	fmt.Println("FAT entry for root directory updated successfully!")
+	// **Set the current and parent directory for the root directory**
+	SetCurrentAndParentDirectory(filename, free_cluster, free_cluster)
+
+	fmt.Println("Root directory set successfully!")
 
 }
 
-func getFAT(fat_size int32) FAT {
+func CreateDirectory(filename, dir_name string, parent_cluster int32) {
 
-	// **Initialize the FAT table**
-	FAT := make(FAT, fat_size)
+	// **Check if the directory name is valid**
+	if dir_name == "." || dir_name == ".." || len(dir_name) > MAX_FILE_NAME {
+		return
+	}
 
-	return FAT
+	// **Check if the directory name is too long**
+	if len(dir_name) > MAX_FILE_NAME {
+		fmt.Println("Error: Directory name is too long.")
+		return
+	}
+
+	// **Check if the directory already exists**
+	if CheckIfDirectoryExists(filename, parent_cluster, dir_name) {
+		fmt.Println("Error: Directory or file with the name", dir_name, "already exists.")
+		return
+	}
+
+	// **Find a free cluster for the new directory**
+	free_cluster, err := FindFreeCluster(filename)
+	if err != nil {
+		fmt.Println("Error finding free cluster:", err)
+		return
+	}
+
+	// **Create the new directory entry**
+	new_dir := DirectoryEntry{
+		name:          dir_name,
+		size:          0,
+		first_cluster: int(free_cluster),
+		is_directory:  true,
+	}
+
+	// **Write the directory entry to the file**
+	err = WriteDirectoryEntry(filename, parent_cluster, new_dir)
+	if err != nil {
+		fmt.Println("Error writing directory entry:", err)
+		return
+	}
+
+	// **Update the FAT entry for the new directory**
+	err = UpdateFatEntry(filename, free_cluster, FAT_EOF)
+	if err != nil {
+		fmt.Println("Error updating FAT entry:", err)
+		return
+	}
+
+	// **Set the current and parent directory for the new directory**
+	SetCurrentAndParentDirectory(filename, free_cluster, parent_cluster)
+
+	fmt.Printf("Directory '%s' created at cluster %d.\n", dir_name, free_cluster)
 }
 
-func ReadDirectoryItems(filename string, cluster int32) ([]DirectoryEntry, error) {
+func SetCurrentAndParentDirectory(filename string, current_cluster, parent_cluster int32) {
+
+	current_entry := DirectoryEntry{
+		name:          ".",
+		size:          0,
+		first_cluster: int(current_cluster),
+		is_directory:  true,
+	}
+	err := WriteDirectoryEntry(filename, current_cluster, current_entry)
+	if err != nil {
+		return
+	}
+
+	parent_entry := DirectoryEntry{
+		name:          "..",
+		size:          0,
+		first_cluster: int(parent_cluster),
+		is_directory:  true,
+	}
+	err = WriteDirectoryEntry(filename, current_cluster, parent_entry)
+	if err != nil {
+		return
+	}
+
+}
+
+func CheckIfDirectoryExists(filename string, parent_cluster int32, dirName string) bool {
+	// Implement the logic to check if the directory exists
+	// For now, return false as a placeholder
+	return false
+}
+
+func ReadDirectoryEntrys(filename string, cluster int32) ([]DirectoryEntry, error) {
 	file, err := os.Open(filename)
 	if err != nil {
 		return nil, fmt.Errorf("error opening file: %v", err)
