@@ -124,7 +124,9 @@ func checkFile(filename string) {
 			fmt.Println("File is empty.")
 		} else {
 			// Load the file system
-			LoadFileSystem(filename)
+			fat1, fat2 := LoadFileSystem(filename)
+
+			PrintFileSystem(fat1, fat2)
 
 		}
 
