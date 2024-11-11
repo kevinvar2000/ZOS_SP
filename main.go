@@ -126,7 +126,7 @@ func checkFile(filename string) {
 			// Load the file system
 			fat1, fat2 := LoadFileSystem(filename)
 
-			PrintFileSystem(fat1, fat2)
+			PrintFileSystem(fat1, fat2, "fats_load.txt")
 
 		}
 
