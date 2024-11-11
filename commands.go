@@ -23,6 +23,8 @@ func PrintHelp() {
 	fmt.Println("load - Load the file")
 	fmt.Println("format - Format the file")
 	fmt.Println("exit - Exit the program")
+	fmt.Println("help - Print the help")
+	fmt.Println()
 }
 
 func FormatFileCmd(filename string) {
@@ -109,8 +111,10 @@ func PrintInformation(filename string) {
 }
 
 func PrintCurrentPath() {
-	// Assume a simple path system, or modify it based on your directory structure
-	// fmt.Println(currentPath) // currentPath should be a global variable maintaining the current path
+
+	current_cluster := GetCurrentCluster()
+	fmt.Println("Current Cluster:", current_cluster)
+
 }
 
 func ChangePath(newPath string) {
@@ -133,10 +137,33 @@ func PrintFileContents(filename string) {
 	// }
 }
 
-func PrintDirectoryContents() {
-	// for name, entry := range fs.directory {
-	// 	fmt.Printf("FILE: %s, SIZE: %d bytes\n", name, entry.size)
-	// }
+func PrintDirectoryContents(filename string, fs_format FileSystemFormat) {
+
+	current_cluster := GetCurrentCluster()
+
+	dir_entries, err := ReadDirectoryEntries(filename, current_cluster, fs_format)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	for _, entry := range dir_entries {
+
+		if !IsZeroEntry(entry) {
+
+			// dir_name_str := string(entry.Name[:])
+
+			// If you want to remove trailing zero bytes (i.e., null characters)
+			// dir_name_str = strings.TrimRight(dir_name_str, "\x00")
+
+			fmt.Println("Name:", entry.Name)
+			fmt.Println("Size:", entry.Size)
+			fmt.Println("First Cluster:", entry.First_cluster)
+			fmt.Println("Is Directory:", entry.Is_directory)
+			fmt.Println()
+		}
+	}
+
 }
 
 func RemoveDirectory(dirname string) {
@@ -153,16 +180,11 @@ func RemoveDirectory(dirname string) {
 	// fmt.Println("OK")
 }
 
-func MakeDirectory(dirname string) {
-	// // Ensure directory doesn't already exist
-	// if _, exists := fs.directory[dirname]; exists {
-	// 	fmt.Println("EXIST")
-	// 	return
-	// }
+func MakeDirectory(dir_name, filename string, fs_format FileSystemFormat) {
 
-	// // Create a directory (it behaves as a special file)
-	// fs.directory[dirname] = DirectoryEntry{name: dirname, size: 0, first_cluster: FAT_EOF}
-	// fmt.Println("OK")
+	parent_cluster := GetCurrentCluster()
+	CreateDirectory(filename, dir_name, parent_cluster, fs_format)
+
 }
 
 func RemoveFile(filename string) {
