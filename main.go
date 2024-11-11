@@ -6,15 +6,18 @@ import (
 	"strings"
 )
 
-func enterCommand() {
+func enterCommand(filename string, fs_format FileSystemFormat) {
+
+	PrintHelp()
 
 	for {
-		PrintHelp()
 		fmt.Print("Enter the command: ")
 		var command string
 		fmt.Scanln(&command)
 
 		switch command {
+		case "help":
+			PrintHelp()
 		case "cpy":
 			fmt.Print("Enter source and destination: ")
 			var src, dest string
@@ -34,14 +37,14 @@ func enterCommand() {
 			fmt.Print("Enter the directory name: ")
 			var dirname string
 			fmt.Scanln(&dirname)
-			MakeDirectory(dirname)
+			MakeDirectory(dirname, filename, fs_format)
 		case "rmdir":
 			fmt.Print("Enter the directory name: ")
 			var dirname string
 			fmt.Scanln(&dirname)
 			RemoveDirectory(dirname)
 		case "ls":
-			PrintDirectoryContents()
+			PrintDirectoryContents(filename, fs_format)
 		case "cat":
 			fmt.Print("Enter the file to display: ")
 			var filename string
@@ -116,33 +119,15 @@ func checkFilename() string {
 
 func checkFile(filename string) {
 
-	info, err := os.Stat(filename)
-	if err == nil {
-
-		// Check if the file is empty
-		if info.Size() == 0 {
-			fmt.Println("File is empty.")
-		} else {
-			// Load the file system
-			fat1, fat2 := LoadFileSystem(filename)
-
-			PrintFileSystem(fat1, fat2, "fats_load.txt")
-
-		}
-
-	} else if os.IsNotExist(err) {
+	_, err := os.Stat(filename)
+	if os.IsNotExist(err) {
 
 		fmt.Printf("\nFile does not exist. Formatting a new file system...\n")
-
-		// Format the file with the desired size
 		Format(filename)
+		fmt.Printf("File created and formatted successfully.\n\n")
 
-		fmt.Printf("File created successfully!\n\n")
-
-	} else {
-
+	} else if err != nil {
 		fmt.Println("Error reading file:", err)
-
 	}
 
 }
@@ -168,6 +153,10 @@ func main() {
 
 	checkFile(filename)
 
-	// enterCommand()
+	fs_format := LoadFormat(filename)
+
+	SetCurrentCluster(fs_format.data_start / CLUSTER_SIZE)
+
+	enterCommand(filename, fs_format)
 
 }
