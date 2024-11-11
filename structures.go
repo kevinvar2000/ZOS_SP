@@ -25,8 +25,8 @@ type FAT []int
 
 // DirectoryEntry stores file metadata
 type DirectoryEntry struct {
-	name          string
-	size          int
-	first_cluster int
-	is_directory  bool
+	Name          [MAX_FILE_NAME]byte
+	Size          int32
+	First_cluster int32
+	Is_directory  uint8 // use 1 for true and 0 for false
 }
