@@ -6,6 +6,8 @@ import (
 	"os"
 )
 
+var current_cluster int32
+
 func SaveFileSystem(filename string, fs_format FileSystemFormat, fat1, fat2 FAT) error {
 
 	// **Print the file system details to a file**
@@ -336,6 +338,8 @@ func CalculateFS(file_size int) FileSystemFormat {
 
 func WriteDirectoryEntry(filename string, cluster int32, dir_entry DirectoryEntry, fs_format FileSystemFormat) error {
 
+	fmt.Println("*** Writing directory entry ***")
+
 	file, err := os.OpenFile(filename, os.O_RDWR, 0644)
 	if err != nil {
 		return fmt.Errorf("error opening file: %v", err)
@@ -353,9 +357,9 @@ func WriteDirectoryEntry(filename string, cluster int32, dir_entry DirectoryEntr
 	}
 
 	fmt.Println("Writing directory entry:", dir_entry)
-	fmt.Println("Data cluster:", data_cluster)
-	fmt.Println("Data start:", fs_format.data_start)
-	fmt.Println("Seeking to cluster:", cluster)
+	fmt.Println("Writing to cluster:", cluster)
+	fmt.Println("Data cluster starts at:", data_cluster)
+	fmt.Println("Data adress starts at:", fs_format.data_start)
 	fmt.Println("Seeked to offset:", offset)
 
 	// **Write the directory entry to the file**
@@ -364,13 +368,15 @@ func WriteDirectoryEntry(filename string, cluster int32, dir_entry DirectoryEntr
 		return fmt.Errorf("error writing directory dir_entry: %v", err)
 	}
 
-	fmt.Println("Directory entry written successfully!")
+	fmt.Println("*** Directory entry written successfully! ***")
 	fmt.Println()
 
 	return nil
 }
 
 func FindFreeCluster(filename string, fat_start int32) (int32, error) {
+
+	fmt.Println("*** Finding free cluster ***")
 
 	file, err := os.OpenFile(filename, os.O_RDWR, 0644)
 	if err != nil {
@@ -394,12 +400,15 @@ func FindFreeCluster(filename string, fat_start int32) (int32, error) {
 		}
 
 		if cluster == -1 {
+			fmt.Println("Free cluster found at:", i)
 			return i, nil
 		}
 	}
 }
 
 func CreateRootDirectory(filename string, free_cluster int32, fs_format FileSystemFormat) {
+
+	fmt.Println("*** Creating root directory ***")
 
 	// **Create the root directory entry**
 	rootDir := DirectoryEntry{
@@ -430,11 +439,16 @@ func CreateRootDirectory(filename string, free_cluster int32, fs_format FileSyst
 	// **Set the current and parent directory for the root directory**
 	SetCurrentAndParentDirectory(filename, free_cluster, free_cluster, fs_format)
 
-	fmt.Println("Root directory set successfully!")
+	// **Set the current cluster to the root directory**
+	SetCurrentCluster(free_cluster)
+
+	fmt.Println("*** Root directory created successfully! ***")
 
 }
 
 func CreateDirectory(filename, dir_name string, parent_cluster int32, fs_format FileSystemFormat) {
+
+	fmt.Println("*** Creating directory ***")
 
 	// **Check if the directory name is valid**
 	if dir_name == "." || dir_name == ".." {
@@ -480,7 +494,11 @@ func CreateDirectory(filename, dir_name string, parent_cluster int32, fs_format 
 	}
 
 	// **Update the parent directory entry**
-	// TODO: Update the parent directory entry with the new directory entry
+	err = UpdateParentDirectory(filename, parent_cluster, new_dir, fs_format)
+	if err != nil {
+		fmt.Println("Error updating parent directory:", err)
+		return
+	}
 
 	// **Update the FAT entry for the new directory**
 	err = UpdateFatEntry(filename, free_cluster, FAT_EOF, fs_format)
@@ -493,9 +511,12 @@ func CreateDirectory(filename, dir_name string, parent_cluster int32, fs_format 
 	SetCurrentAndParentDirectory(filename, free_cluster, parent_cluster, fs_format)
 
 	fmt.Printf("Directory '%s' created at cluster %d.\n", dir_name, free_cluster)
+	fmt.Println("*** Directory created successfully! ***")
 }
 
 func SetCurrentAndParentDirectory(filename string, current_cluster, parent_cluster int32, fs_format FileSystemFormat) {
+
+	fmt.Println("*** Setting current and parent directory ***")
 
 	file, err := os.OpenFile(filename, os.O_RDWR, 0666)
 	if err != nil {
@@ -576,10 +597,13 @@ func SetCurrentAndParentDirectory(filename string, current_cluster, parent_clust
 	}
 
 	fmt.Println("Zero padding written successfully!")
+	fmt.Println("*** Current and parent directory set successfully! ***")
 	fmt.Println()
 }
 
 func CheckIfDirectoryExists(filename string, parent_cluster int32, dirName string, fs_format FileSystemFormat) bool {
+
+	fmt.Println("*** Checking if directory exists ***")
 
 	// **Read the directory entries from the parent cluster**
 	dir_entries, err := ReadDirectoryEntries(filename, parent_cluster, fs_format)
@@ -599,6 +623,8 @@ func CheckIfDirectoryExists(filename string, parent_cluster int32, dirName strin
 }
 
 func ReadDirectoryEntries(filename string, cluster int32, fs_format FileSystemFormat) ([]DirectoryEntry, error) {
+
+	fmt.Println("*** Reading directory entries ***")
 
 	file, err := os.OpenFile(filename, os.O_RDWR, 0666)
 	if err != nil {
@@ -626,14 +652,12 @@ func ReadDirectoryEntries(filename string, cluster int32, fs_format FileSystemFo
 			return nil, fmt.Errorf("error reading directory entry: %v", err)
 		}
 
-		if !IsZeroEntry(entry) {
-			items = append(items, entry)
-		}
+		items = append(items, entry)
 
 	}
 
 	fmt.Println("Directory entries read count:", len(items))
-	fmt.Println("Directory entries read successfully!")
+	fmt.Println("*** Directory entries read successfully! ***")
 	fmt.Println()
 
 	return items, nil
@@ -644,6 +668,8 @@ func IsZeroEntry(entry DirectoryEntry) bool {
 }
 
 func UpdateFatEntry(filename string, cluster, value int32, fs_format FileSystemFormat) error {
+
+	fmt.Println("*** Updating FAT entry ***")
 
 	file, err := os.OpenFile(filename, os.O_RDWR, 0644)
 	if err != nil {
@@ -680,8 +706,102 @@ func UpdateFatEntry(filename string, cluster, value int32, fs_format FileSystemF
 	fmt.Println("Updating FAT2 entry at cluster", cluster)
 	fmt.Println("Seeked to offset:", offset)
 
-	fmt.Println("FAT entry updated successfully!")
+	fmt.Println("*** FAT entry updated successfully! ***")
 	fmt.Println()
 
 	return nil
+}
+
+func UpdateParentDirectory(filename string, parent_cluster int32, new_dir DirectoryEntry, fs_format FileSystemFormat) error {
+
+	fmt.Println("*** Updating parent directory ***")
+
+	file, err := os.OpenFile(filename, os.O_RDWR, 0644)
+	if err != nil {
+		return fmt.Errorf("error opening file: %v", err)
+	}
+	defer file.Close()
+
+	// **Read the directory entries from the parent cluster**
+	dir_entries, err := ReadDirectoryEntries(filename, parent_cluster, fs_format)
+	if err != nil {
+		return fmt.Errorf("error reading directory entries: %v", err)
+	}
+
+	// **Find the free entry in the parent directory**
+	entry_written := false
+	for i, entry := range dir_entries {
+		if IsZeroEntry(entry) {
+			dir_entries[i] = new_dir
+			entry_written = true
+			fmt.Println("Free entry found in parent directory:", i)
+			break
+		}
+	}
+
+	// **If no free entry was found, find a new cluster for the parent directory**
+	if !entry_written {
+
+		fmt.Println("No free entry found in parent directory. Finding a new cluster...")
+
+		// **Find a new free cluster**
+		new_cluster, err := FindFreeCluster(filename, fs_format.fat1_start)
+		if err != nil {
+			return fmt.Errorf("error finding free cluster: %v", err)
+		}
+
+		// **Update the parent directory's FAT entry to link to the new cluster**
+		err = UpdateFatEntry(filename, parent_cluster, new_cluster, fs_format)
+		if err != nil {
+			return fmt.Errorf("error updating FAT entry for parent directory: %v", err)
+		}
+
+		// **Write the new directory entries to the new cluster**
+		err = WriteDirectoryEntry(filename, new_cluster, new_dir, fs_format)
+		if err != nil {
+			return fmt.Errorf("error writing directory entries to new cluster: %v", err)
+		}
+
+		// **Update the parent directory entry to link to the new cluster**
+		err = WriteDirectoryEntry(filename, parent_cluster, new_dir, fs_format)
+		if err != nil {
+			return fmt.Errorf("error writing new directory entry to parent directory: %v", err)
+		}
+	}
+
+	// **Write the updated directory entries back to the parent cluster**
+	fmt.Println("Writing updated directory entries to parent directory...")
+
+	// **Seek to the parent directory cluster position**
+	offset := int64(fs_format.data_start + (parent_cluster-2*fs_format.fat_cluster_count-1)*CLUSTER_SIZE)
+	fmt.Println("Seeking to parent directory cluster position:", offset)
+	_, err = file.Seek(offset, 0)
+	if err != nil {
+		return fmt.Errorf("error seeking to parent directory cluster: %v", err)
+	}
+
+	fmt.Println("Offset:", offset)
+
+	// **Write the directory entries to the file**
+	for _, entry := range dir_entries {
+		fmt.Println("Writing directory entry:", entry)
+		err = binary.Write(file, binary.LittleEndian, entry)
+		if err != nil {
+			return fmt.Errorf("error writing directory entry: %v", err)
+		}
+	}
+
+	fmt.Println("*** Parent directory updated successfully! ***")
+	fmt.Println()
+	return nil
+}
+
+func GetCurrentCluster() int32 {
+	fmt.Println("Getting current cluster:", current_cluster)
+	return current_cluster
+}
+
+func SetCurrentCluster(cluster int32) {
+	current_cluster = cluster
+	fmt.Println("Setting current cluster:", current_cluster)
 }
