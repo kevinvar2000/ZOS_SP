@@ -276,11 +276,11 @@ func PrintDirectoryContents(filename, src string, fs_format FileSystemFormat) {
 
 	current_cluster := GetCurrentCluster()
 
-	fmt.Println("Current Cluster:", current_cluster)
+	// fmt.Println("Current Cluster:", current_cluster)
 
 	if src != "" {
 
-		fmt.Println("Changing directory to:", src)
+		// fmt.Println("Changing directory to:", src)
 
 		var err error
 		current_cluster, _, err = ParsePath(filename, src, fs_format, false)
@@ -289,10 +289,10 @@ func PrintDirectoryContents(filename, src string, fs_format FileSystemFormat) {
 			fmt.Println("PATH NOT FOUND")
 			return
 		}
-		fmt.Println("New Cluster:", current_cluster)
+		// fmt.Println("New Cluster:", current_cluster)
 	}
 
-	fmt.Println("Current Cluster before read:", current_cluster)
+	// fmt.Println("Current Cluster before read:", current_cluster)
 
 	dir_entries, err := ReadDirectoryEntries(filename, current_cluster, fs_format)
 	if err != nil {
@@ -324,13 +324,6 @@ func PrintFileContents(filename, file string, fs_format FileSystemFormat) {
 	// **Locate the file in the current directory**
 	entry, err := FindEntry(filename, file_name, file_cluster, fs_format)
 	if err != nil {
-		fmt.Println("Error checking file:", err)
-		return
-	}
-
-	// **Check if file exists**
-	if IsZeroEntry(entry) {
-		// fmt.Println("File not found:", file)
 		fmt.Println("FILE NOT FOUND")
 		return
 	}
