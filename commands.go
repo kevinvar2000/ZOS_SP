@@ -130,7 +130,25 @@ func MoveFile(filename, src, dest string, fs_format FileSystemFormat) {
 	// **Check if destination already exists**
 	dest_entry, err := FindEntry(filename, dest_name, dir_cluster, fs_format)
 	if err != nil {
-		fmt.Println("Error checking destination file:", err)
+
+		// Modify the source entry's name to the new name
+		copy(src_entry.Name[:], dest_name)
+
+		// Write the modified entry to the destination directory
+		err = WriteDirectoryEntry(filename, dir_cluster, src_entry, fs_format)
+		if err != nil {
+			fmt.Println("Error writing directory entry:", err)
+			return
+		}
+
+		// Remove the source entry
+		err = RemoveDirectoryEntry(filename, current_cluster, src, fs_format)
+		if err != nil {
+			fmt.Println("Error removing source file:", err)
+			return
+		}
+
+		fmt.Println("OK")
 		return
 	}
 
