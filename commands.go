@@ -100,10 +100,16 @@ func CopyFile(filename, src, dest string, fs_format FileSystemFormat) {
 func MoveFile(filename, src, dest string, fs_format FileSystemFormat) {
 	// fmt.Println("*** Moving file ***")
 
-	current_cluster := GetCurrentCluster()
+	src_cluster, src_name, err := ParsePath(filename, src, fs_format)
+	if err != nil {
+		// fmt.Println("Error parsing source path:", err)
+		fmt.Println("PATH NOT FOUND")
+	}
+
+	// fmt.Println("Source Cluster:", src_cluster, "Source Name:", src_name)
 
 	// **Locate the source file in the current directory**
-	src_entry, err := FindEntry(filename, src, current_cluster, fs_format)
+	src_entry, err := FindEntry(filename, src_name, src_cluster, fs_format)
 	if err != nil {
 		// fmt.Println("Error checking source file:", err)
 		fmt.Println("FILE NOT FOUND")
@@ -117,45 +123,29 @@ func MoveFile(filename, src, dest string, fs_format FileSystemFormat) {
 	}
 
 	// **Locate the destination cluster and name**
-	dir_cluster, dest_name, err := ParsePath(filename, dest, fs_format)
+	dest_cluster, dest_name, err := ParsePath(filename, dest, fs_format)
 	if err != nil {
 		// fmt.Println("Error parsing destination path:", err)
 		fmt.Println("PATH NOT FOUND")
 		return
 	}
 
-	// fmt.Println("Current Cluster:", current_cluster)
-	// fmt.Println("Dir Cluster:", dir_cluster, "Dir Name:", dest_name)
+	// fmt.Println("Dest Cluster:", dest_cluster, "Dest Name:", dest_name)
 
 	// **Check if destination already exists**
-	dest_entry, err := FindEntry(filename, dest_name, dir_cluster, fs_format)
+	var rename bool
+	dest_entry, err := FindEntry(filename, dest_name, dest_cluster, fs_format)
 	if err != nil {
-
-		// Modify the source entry's name to the new name
-		copy(src_entry.Name[:], dest_name)
-
-		// Write the modified entry to the destination directory
-		err = WriteDirectoryEntry(filename, dir_cluster, src_entry, fs_format)
-		if err != nil {
-			fmt.Println("Error writing directory entry:", err)
-			return
-		}
-
-		// Remove the source entry
-		err = RemoveDirectoryEntry(filename, current_cluster, src, fs_format)
-		if err != nil {
-			fmt.Println("Error removing source file:", err)
-			return
-		}
-
-		fmt.Println("OK")
-		return
+		fmt.Println("Rename true")
+		rename = true
 	}
 
 	// **Check if destination already exists**
-	if dest_entry.Is_directory != 1 {
-		fmt.Println("Destination is not a directory:", dest_name)
-		return
+	if !rename {
+		if dest_entry.Is_directory != 1 {
+			fmt.Println("Destination is not a directory:", dest_name)
+			return
+		}
 	}
 
 	// **Read the source file contents**
@@ -177,8 +167,6 @@ func MoveFile(filename, src, dest string, fs_format FileSystemFormat) {
 		return
 	}
 
-	// fmt.Println("First Free Cluster:", free_cluster)
-
 	// **Write file contents to the destination clusters**
 	err = WriteFileContents(filename, free_cluster, fileContents, fs_format)
 	if err != nil {
@@ -191,7 +179,13 @@ func MoveFile(filename, src, dest string, fs_format FileSystemFormat) {
 		First_cluster: free_cluster,
 		Is_directory:  src_entry.Is_directory,
 	}
-	copy(new_entry.Name[:], src)
+
+	if rename {
+		copy(new_entry.Name[:], dest_name)
+		dest_entry.First_cluster = src_cluster
+	} else {
+		copy(new_entry.Name[:], src)
+	}
 
 	// **Write the new directory entry to the destination directory**
 	// fmt.Println("Writing to cluster:", dest_entry.First_cluster, "Entry:", src)
@@ -203,7 +197,7 @@ func MoveFile(filename, src, dest string, fs_format FileSystemFormat) {
 
 	// **Remove the source file from the directory**
 	// fmt.Println("Removing in cluster:", current_cluster, "Entry:", src)
-	err = RemoveDirectoryEntry(filename, current_cluster, src, fs_format)
+	err = RemoveDirectoryEntry(filename, src_cluster, src_name, fs_format)
 	if err != nil {
 		fmt.Println("Error removing source file:", err)
 		return
