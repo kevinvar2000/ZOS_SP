@@ -188,7 +188,7 @@ func MoveFile(filename, src, dest string, fs_format FileSystemFormat) {
 
 	if rename {
 		copy(new_entry.Name[:], dest_name)
-		dest_entry.First_cluster = src_cluster
+		dest_entry.First_cluster = dest_cluster
 	} else {
 		copy(new_entry.Name[:], src)
 	}
