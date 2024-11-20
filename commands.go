@@ -18,10 +18,16 @@ import (
 func CopyFile(filename, src, dest string, fs_format FileSystemFormat) {
 	// fmt.Println("*** Copying file ***")
 
-	current_cluster := GetCurrentCluster()
+	// **Locate the source cluster and name**
+	src_cluster, src_name, err := ParsePath(filename, src, fs_format)
+	if err != nil {
+		// fmt.Println("Error parsing source path:", err)
+		fmt.Println("PATH NOT FOUND")
+		return
+	}
 
 	// **Locate the source file in the current directory**
-	src_entry, err := FindEntry(filename, src, current_cluster, fs_format)
+	src_entry, err := FindEntry(filename, src_name, src_cluster, fs_format)
 	if err != nil {
 		// fmt.Println("Error checking source file:", err)
 		fmt.Println("FILE NOT FOUND")
@@ -30,7 +36,7 @@ func CopyFile(filename, src, dest string, fs_format FileSystemFormat) {
 
 	// **Check if source is a directory**
 	if src_entry.Is_directory == 1 {
-		fmt.Println("Source is a directory and cannot be copied:", src)
+		fmt.Println("Source is a directory and cannot be copied:", src_name)
 		return
 	}
 
@@ -118,7 +124,7 @@ func MoveFile(filename, src, dest string, fs_format FileSystemFormat) {
 
 	// **Check if source is a directory**
 	if src_entry.Is_directory == 1 {
-		fmt.Println("Source is a directory and cannot be moved:", src)
+		fmt.Println("Source is a directory and cannot be moved:", src_name)
 		return
 	}
 
@@ -209,10 +215,17 @@ func MoveFile(filename, src, dest string, fs_format FileSystemFormat) {
 
 func RemoveFile(filename, file string, fs_format FileSystemFormat) {
 
-	current_cluster := GetCurrentCluster()
+	// fmt.Println("*** Removing file ***")
+
+	file_cluster, file_name, err := ParsePath(filename, file, fs_format)
+	if err != nil {
+		// fmt.Println("Error parsing file path:", err)
+		fmt.Println("PATH NOT FOUND")
+		return
+	}
 
 	// **Locate the source file in the current directory**
-	entry, err := FindEntry(filename, file, current_cluster, fs_format)
+	entry, err := FindEntry(filename, file_name, file_cluster, fs_format)
 	if err != nil {
 		// fmt.Println("Error checking file:", err)
 		fmt.Println("FILE NOT FOUND")
@@ -221,12 +234,12 @@ func RemoveFile(filename, file string, fs_format FileSystemFormat) {
 
 	// **Check if file exists**
 	if IsZeroEntry(entry) {
-		fmt.Println("File not found:", file)
+		fmt.Println("File not found:", file_name)
 		return
 	}
 
 	// **Remove the file**
-	err = RemoveDirectoryEntry(filename, current_cluster, file, fs_format)
+	err = RemoveDirectoryEntry(filename, file_cluster, file, fs_format)
 	if err != nil {
 		fmt.Println("Error removing file:", err)
 		return
@@ -244,8 +257,14 @@ func MakeDirectory(dir_name, filename string, fs_format FileSystemFormat) {
 
 func RemoveDirectory(filename, dir_name string, fs_format FileSystemFormat) {
 
-	current_cluster := GetCurrentCluster()
-	err := RemoveDirectoryEntry(filename, current_cluster, dir_name, fs_format)
+	dir_cluster, dir_name, err := ParsePath(filename, dir_name, fs_format)
+	if err != nil {
+		// fmt.Println("Error parsing directory path:", err)
+		fmt.Println("PATH NOT FOUND")
+		return
+	}
+
+	err = RemoveDirectoryEntry(filename, dir_cluster, dir_name, fs_format)
 	if err != nil {
 		fmt.Println("Error removing directory:", err)
 		return
@@ -287,10 +306,15 @@ func PrintDirectoryContents(filename, src string, fs_format FileSystemFormat) {
 
 func PrintFileContents(filename, file string, fs_format FileSystemFormat) {
 
-	current_cluster := GetCurrentCluster()
+	file_cluster, file_name, err := ParsePath(filename, file, fs_format)
+	if err != nil {
+		// fmt.Println("Error parsing file path:", err)
+		fmt.Println("PATH NOT FOUND")
+		return
+	}
 
 	// **Locate the file in the current directory**
-	entry, err := FindEntry(filename, file, current_cluster, fs_format)
+	entry, err := FindEntry(filename, file_name, file_cluster, fs_format)
 	if err != nil {
 		fmt.Println("Error checking file:", err)
 		return
@@ -401,10 +425,15 @@ func PrintCurrentPath() {
 
 func PrintInformation(filename, file string, fs_format FileSystemFormat) {
 
-	current_cluster := GetCurrentCluster()
+	file_cluster, file_name, err := ParsePath(filename, file, fs_format)
+	if err != nil {
+		// fmt.Println("Error parsing file path:", err)
+		fmt.Println("PATH NOT FOUND")
+		return
+	}
 
 	// **Locate the file in the current directory**
-	entry, err := FindEntry(filename, file, current_cluster, fs_format)
+	entry, err := FindEntry(filename, file_name, file_cluster, fs_format)
 	if err != nil {
 		fmt.Println("FILE NOT FOUND")
 		// fmt.Println("Error checking file:", err)
@@ -519,16 +548,16 @@ func Incp(filename string, src string, dest string, fs_format FileSystemFormat) 
 func Outcp(filename string, src string, dest string, fs_format FileSystemFormat) {
 
 	// **Parse the source path and locate the source file**
-	srcCluster, srcName, err := ParsePath(filename, src, fs_format)
+	src_cluster, src_name, err := ParsePath(filename, src, fs_format)
 	if err != nil {
 		fmt.Println("Error parsing source path:", err)
 		return
 	}
 
-	// fmt.Println("Source Cluster:", srcCluster)
+	// fmt.Println("Source Cluster:", src_cluster)
 
 	// **Locate the source file in the directory**
-	dirEntries, err := ReadDirectoryEntries(filename, srcCluster, fs_format)
+	dirEntries, err := ReadDirectoryEntries(filename, src_cluster, fs_format)
 	if err != nil {
 		fmt.Println("Error reading directory entries:", err)
 		return
@@ -537,7 +566,7 @@ func Outcp(filename string, src string, dest string, fs_format FileSystemFormat)
 	var src_entry DirectoryEntry
 	found := false
 	for _, entry := range dirEntries {
-		if string(bytes.Trim(entry.Name[:], "\x00")) == srcName {
+		if string(bytes.Trim(entry.Name[:], "\x00")) == src_name {
 			src_entry = entry
 			found = true
 			break
@@ -627,10 +656,14 @@ func FormatFileCmd(filename string, size int) {
 
 func BugTest(filename, bug_file string, fs_format FileSystemFormat) {
 
-	current_cluster := GetCurrentCluster()
+	bug_file_cluster, bug_file_name, err := ParsePath(filename, bug_file, fs_format)
+	if err != nil {
+		fmt.Println("Error parsing file path:", err)
+		return
+	}
 
 	// Read all directory entries in the current directory
-	dirEntries, err := ReadDirectoryEntries(filename, current_cluster, fs_format)
+	dirEntries, err := ReadDirectoryEntries(filename, bug_file_cluster, fs_format)
 	if err != nil {
 		fmt.Println("Error reading directory entries:", err)
 		return
@@ -641,7 +674,7 @@ func BugTest(filename, bug_file string, fs_format FileSystemFormat) {
 	for _, entry := range dirEntries {
 		if !IsZeroEntry(entry) { // Skip empty entries
 			entryName := string(bytes.Trim(entry.Name[:], "\x00"))
-			if entryName == bug_file {
+			if entryName == bug_file_name {
 				startCluster = entry.First_cluster
 				break
 			}
