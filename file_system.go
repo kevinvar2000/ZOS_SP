@@ -1358,24 +1358,28 @@ func SetCurrentPath(path string) {
 func ParsePath(filename, dest string, fs_format FileSystemFormat) (int32, string, error) {
 	// fmt.Println("*** Parsing path ***")
 
-	// **Determine if the path is absolute or relative**
+	// **Trim the trailing slash from the destination path**
+	dest = strings.TrimRight(dest, "/")
+	path_components := strings.Split(dest, "/")
+
+	// **Check if the path is absolute or relative**
 	var current_cluster int32
-	if dest[0] == '/' {
-		current_cluster = fs_format.data_start / CLUSTER_SIZE // Start from the root directory
-		// fmt.Println("Path is absolute. Starting from root.")
+	if path_components[0] == "" {
+		// Absolute path (starts with "/"): Start from the root directory
+		current_cluster = fs_format.data_start / CLUSTER_SIZE
 	} else {
-		current_cluster = GetCurrentCluster() // Use the current working directory
-		// fmt.Println("Path is relative. Starting from current cluster.")
+		// Relative path: Start from the current directory
+		current_cluster = GetCurrentCluster()
 	}
 
 	// **Split the path into components**
-	path_components := strings.Split(dest, "/")
 	var final_name string
-
 	for i, component := range path_components {
+
 		if component == "" || component == "." {
 			continue // Ignore empty or current directory symbol
 		}
+
 		if component == ".." {
 			// Handle parent directory navigation
 			parent_cluster := GetParentCluster(filename, current_cluster, fs_format)

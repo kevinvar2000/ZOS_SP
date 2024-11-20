@@ -349,8 +349,8 @@ func ChangePath(filename, path string, fs_format FileSystemFormat) {
 		// Root directory case
 		SetCurrentCluster(fs_format.data_start / CLUSTER_SIZE)
 		SetCurrentPath(path)
+		fmt.Println("OK")
 		return
-
 	} else if path[0] == '/' {
 		// fmt.Println("Absolute path")
 		// Absolute path, start from root cluster
@@ -655,9 +655,7 @@ func LoadFile(filename, script string, fs_format FileSystemFormat) {
 			arg2 = words[2]
 		}
 
-		// fmt.Println("Executing:", command)
-		// fmt.Println("Arg1:", arg1)
-		// fmt.Println("Arg2:", arg2)
+		fmt.Println("Executing:", command, arg1, arg2)
 		ExecuteCommand(filename, command, arg1, arg2, fs_format)
 	}
 
@@ -780,7 +778,7 @@ func CheckForBugs(filename string, fs_format FileSystemFormat) {
 >>>>>>> 7bb1479 (Reinitialize Git repository)
 func PrintHelp() {
 	fmt.Println("Commands:")
-	fmt.Println("cpy - Copy the file")
+	fmt.Println("cp - Copy the file")
 	fmt.Println("mv - Move the file")
 	fmt.Println("rm - Remove the file")
 	fmt.Println("mkdir - Make a directory")
@@ -1021,7 +1019,7 @@ func CopyFile(src string, dest string) {
 func ExecuteCommand(filename, command, arg1, arg2 string, fs_format FileSystemFormat) {
 
 	switch command {
-	case "cpy":
+	case "cp":
 		if arg1 == "" || arg2 == "" {
 			fmt.Println("Source and destination paths are required for copy.")
 			return
