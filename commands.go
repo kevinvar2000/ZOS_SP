@@ -19,7 +19,7 @@ func CopyFile(filename, src, dest string, fs_format FileSystemFormat) {
 	// fmt.Println("*** Copying file ***")
 
 	// **Locate the source cluster and name**
-	src_cluster, src_name, err := ParsePath(filename, src, fs_format)
+	src_cluster, src_name, err := ParsePath(filename, src, fs_format, true)
 	if err != nil {
 		// fmt.Println("Error parsing source path:", err)
 		fmt.Println("PATH NOT FOUND")
@@ -41,7 +41,7 @@ func CopyFile(filename, src, dest string, fs_format FileSystemFormat) {
 	}
 
 	// **Locate the destination cluster and name**
-	entry_dest_cluster, dest_name, err := ParsePath(filename, dest, fs_format)
+	entry_dest_cluster, dest_name, err := ParsePath(filename, dest, fs_format, true)
 	if err != nil {
 		// fmt.Println("Error parsing destination path:", err)
 		fmt.Println("PATH NOT FOUND")
@@ -106,7 +106,7 @@ func CopyFile(filename, src, dest string, fs_format FileSystemFormat) {
 func MoveFile(filename, src, dest string, fs_format FileSystemFormat) {
 	// fmt.Println("*** Moving file ***")
 
-	src_cluster, src_name, err := ParsePath(filename, src, fs_format)
+	src_cluster, src_name, err := ParsePath(filename, src, fs_format, true)
 	if err != nil {
 		// fmt.Println("Error parsing source path:", err)
 		fmt.Println("PATH NOT FOUND")
@@ -129,7 +129,7 @@ func MoveFile(filename, src, dest string, fs_format FileSystemFormat) {
 	}
 
 	// **Locate the destination cluster and name**
-	dest_cluster, dest_name, err := ParsePath(filename, dest, fs_format)
+	dest_cluster, dest_name, err := ParsePath(filename, dest, fs_format, true)
 	if err != nil {
 		// fmt.Println("Error parsing destination path:", err)
 		fmt.Println("PATH NOT FOUND")
@@ -217,7 +217,7 @@ func RemoveFile(filename, file string, fs_format FileSystemFormat) {
 
 	// fmt.Println("*** Removing file ***")
 
-	file_cluster, file_name, err := ParsePath(filename, file, fs_format)
+	file_cluster, file_name, err := ParsePath(filename, file, fs_format, true)
 	if err != nil {
 		// fmt.Println("Error parsing file path:", err)
 		fmt.Println("PATH NOT FOUND")
@@ -239,7 +239,7 @@ func RemoveFile(filename, file string, fs_format FileSystemFormat) {
 	}
 
 	// **Remove the file**
-	err = RemoveDirectoryEntry(filename, file_cluster, file, fs_format)
+	err = RemoveDirectoryEntry(filename, file_cluster, file_name, fs_format)
 	if err != nil {
 		fmt.Println("Error removing file:", err)
 		return
@@ -257,7 +257,7 @@ func MakeDirectory(dir_name, filename string, fs_format FileSystemFormat) {
 
 func RemoveDirectory(filename, dir_name string, fs_format FileSystemFormat) {
 
-	dir_cluster, dir_name, err := ParsePath(filename, dir_name, fs_format)
+	dir_cluster, dir_name, err := ParsePath(filename, dir_name, fs_format, true)
 	if err != nil {
 		// fmt.Println("Error parsing directory path:", err)
 		fmt.Println("PATH NOT FOUND")
@@ -276,15 +276,23 @@ func PrintDirectoryContents(filename, src string, fs_format FileSystemFormat) {
 
 	current_cluster := GetCurrentCluster()
 
+	fmt.Println("Current Cluster:", current_cluster)
+
 	if src != "" {
+
+		fmt.Println("Changing directory to:", src)
+
 		var err error
-		current_cluster, _, err = ParsePath(filename, src, fs_format)
+		current_cluster, _, err = ParsePath(filename, src, fs_format, false)
 		if err != nil {
 			// fmt.Println("Error parsing path:", err)
 			fmt.Println("PATH NOT FOUND")
 			return
 		}
+		fmt.Println("New Cluster:", current_cluster)
 	}
+
+	fmt.Println("Current Cluster before read:", current_cluster)
 
 	dir_entries, err := ReadDirectoryEntries(filename, current_cluster, fs_format)
 	if err != nil {
@@ -306,7 +314,7 @@ func PrintDirectoryContents(filename, src string, fs_format FileSystemFormat) {
 
 func PrintFileContents(filename, file string, fs_format FileSystemFormat) {
 
-	file_cluster, file_name, err := ParsePath(filename, file, fs_format)
+	file_cluster, file_name, err := ParsePath(filename, file, fs_format, true)
 	if err != nil {
 		// fmt.Println("Error parsing file path:", err)
 		fmt.Println("PATH NOT FOUND")
@@ -425,7 +433,7 @@ func PrintCurrentPath() {
 
 func PrintInformation(filename, src string, fs_format FileSystemFormat) {
 
-	src_cluster, src_name, err := ParsePath(filename, src, fs_format)
+	src_cluster, src_name, err := ParsePath(filename, src, fs_format, true)
 	if err != nil {
 		// fmt.Println("Error parsing file path:", err)
 		fmt.Println("PATH NOT FOUND")
@@ -497,7 +505,7 @@ func Incp(filename string, src string, dest string, fs_format FileSystemFormat) 
 	// fmt.Println("File contents:", fileContents)
 
 	// **Parse the destination path**
-	destCluster, destName, err := ParsePath(filename, dest, fs_format)
+	destCluster, destName, err := ParsePath(filename, dest, fs_format, true)
 	if err != nil {
 		fmt.Println("PATH NOT FOUND")
 		// fmt.Println("Error parsing destination path:", err)
@@ -563,7 +571,7 @@ func Incp(filename string, src string, dest string, fs_format FileSystemFormat) 
 func Outcp(filename string, src string, dest string, fs_format FileSystemFormat) {
 
 	// **Parse the source path and locate the source file**
-	src_cluster, src_name, err := ParsePath(filename, src, fs_format)
+	src_cluster, src_name, err := ParsePath(filename, src, fs_format, true)
 	if err != nil {
 		fmt.Println("Error parsing source path:", err)
 		return
@@ -640,6 +648,18 @@ func LoadFile(filename, script string, fs_format FileSystemFormat) {
 	lines := strings.Split(string(data), "\n")
 	for _, line := range lines {
 
+		// **Print empty lines**
+		if line == "" || line == "\n" || line == "\r" || line == "\r\n" || strings.TrimSpace(line) == "" {
+			fmt.Println()
+			continue
+		}
+
+		// **Print the comment**
+		if strings.HasPrefix(line, "#") {
+			fmt.Println(line)
+			continue
+		}
+
 		// **Split the command by space**
 		words := strings.Fields(line)
 
@@ -659,7 +679,7 @@ func LoadFile(filename, script string, fs_format FileSystemFormat) {
 		ExecuteCommand(filename, command, arg1, arg2, fs_format)
 	}
 
-	fmt.Println("OK")
+	// fmt.Println("OK")
 }
 
 func FormatFileCmd(filename string, size int) {
@@ -669,7 +689,7 @@ func FormatFileCmd(filename string, size int) {
 
 func BugTest(filename, bug_file string, fs_format FileSystemFormat) {
 
-	bug_file_cluster, bug_file_name, err := ParsePath(filename, bug_file, fs_format)
+	bug_file_cluster, bug_file_name, err := ParsePath(filename, bug_file, fs_format, true)
 	if err != nil {
 		fmt.Println("Error parsing file path:", err)
 		return

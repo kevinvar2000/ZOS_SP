@@ -729,7 +729,7 @@ func CreateDirectory(filename, dir_name string, fs_format FileSystemFormat) {
 	}
 
 	// **Parse the path to get the parent cluster and final directory name**
-	parent_cluster, final_name, err := ParsePath(filename, dir_name, fs_format)
+	parent_cluster, final_name, err := ParsePath(filename, dir_name, fs_format, true)
 	if err != nil {
 		// fmt.Println("Error parsing path:", err)
 		fmt.Println("PATH NOT FOUND")
@@ -1355,7 +1355,7 @@ func SetCurrentPath(path string) {
 	// fmt.Println("Setting current path:", current_path)
 }
 
-func ParsePath(filename, dest string, fs_format FileSystemFormat) (int32, string, error) {
+func ParsePath(filename, dest string, fs_format FileSystemFormat, last_entry bool) (int32, string, error) {
 	// fmt.Println("*** Parsing path ***")
 
 	// **Trim the trailing slash from the destination path**
@@ -1388,8 +1388,21 @@ func ParsePath(filename, dest string, fs_format FileSystemFormat) (int32, string
 		}
 
 		if i == len(path_components)-1 {
-			// The last component is the target name
 			final_name = component
+
+			// If `last_entry` is false, traverse into the last component
+			if !last_entry {
+				next_cluster, err := FindDirectoryCluster(filename, component, current_cluster, fs_format)
+				if err != nil {
+					fmt.Println("Error finding cluster for last component:", err)
+					return -1, "", fmt.Errorf("error finding cluster for '%s': %v", component, err)
+				}
+				if next_cluster == -1 {
+					fmt.Println("Directory or file not found:", component)
+					return -1, "", fmt.Errorf("directory or file '%s' not found", component)
+				}
+				current_cluster = next_cluster
+			}
 			break
 		}
 
