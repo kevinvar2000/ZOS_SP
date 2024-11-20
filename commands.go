@@ -116,18 +116,27 @@ func MoveFile(filename, src, dest string, fs_format FileSystemFormat) {
 		return
 	}
 
-	entry_dest_cluster, dest_name, err := ParsePath(filename, dest, fs_format)
+	// **Locate the destination cluster and name**
+	dir_cluster, dest_name, err := ParsePath(filename, dest, fs_format)
 	if err != nil {
 		// fmt.Println("Error parsing destination path:", err)
 		fmt.Println("PATH NOT FOUND")
 		return
 	}
 
-	// fmt.Println("Destination Cluster:", entry_dest_cluster, "Destination Name:", dest_name)
+	// fmt.Println("Current Cluster:", current_cluster)
+	// fmt.Println("Dir Cluster:", dir_cluster, "Dir Name:", dest_name)
 
-	// **Check if destination exists**
-	if !CheckIfDirectoryExists(filename, entry_dest_cluster, dest_name, fs_format) {
-		fmt.Println("Destination does not exist:", dest_name)
+	// **Check if destination already exists**
+	dest_entry, err := FindEntry(filename, dest_name, dir_cluster, fs_format)
+	if err != nil {
+		fmt.Println("Error checking destination file:", err)
+		return
+	}
+
+	// **Check if destination already exists**
+	if dest_entry.Is_directory != 1 {
+		fmt.Println("Destination is not a directory:", dest_name)
 		return
 	}
 
@@ -139,41 +148,43 @@ func MoveFile(filename, src, dest string, fs_format FileSystemFormat) {
 	}
 
 	// **Find the first free cluster for the file**
-	dest_cluster, err := FindFreeCluster(filename, fs_format.fat1_start)
+	free_cluster, err := FindFreeCluster(filename, fs_format.fat1_start)
 	if err != nil {
 		fmt.Println("Error finding free cluster:", err)
 		return
 	}
 
-	if dest_cluster == -1 {
+	if free_cluster == -1 {
 		fmt.Println("Error: Not enough free space in the file system.")
 		return
 	}
 
-	// fmt.Println("First Free Cluster:", dest_cluster)
+	// fmt.Println("First Free Cluster:", free_cluster)
 
 	// **Write file contents to the destination clusters**
-	err = WriteFileContents(filename, dest_cluster, fileContents, fs_format)
+	err = WriteFileContents(filename, free_cluster, fileContents, fs_format)
 	if err != nil {
 		fmt.Println("Error writing file contents:", err)
 		return
 	}
 	// **Create a new directory entry for the copied file**
-	dest_entry := DirectoryEntry{
+	new_entry := DirectoryEntry{
 		Size:          src_entry.Size,
-		First_cluster: dest_cluster,
+		First_cluster: free_cluster,
 		Is_directory:  src_entry.Is_directory,
 	}
-	copy(dest_entry.Name[:], dest_name)
+	copy(new_entry.Name[:], src)
 
 	// **Write the new directory entry to the destination directory**
-	err = WriteDirectoryEntry(filename, entry_dest_cluster, dest_entry, fs_format)
+	// fmt.Println("Writing to cluster:", dest_entry.First_cluster, "Entry:", src)
+	err = WriteDirectoryEntry(filename, dest_entry.First_cluster, new_entry, fs_format)
 	if err != nil {
 		fmt.Println("Error writing directory entry:", err)
 		return
 	}
 
 	// **Remove the source file from the directory**
+	// fmt.Println("Removing in cluster:", current_cluster, "Entry:", src)
 	err = RemoveDirectoryEntry(filename, current_cluster, src, fs_format)
 	if err != nil {
 		fmt.Println("Error removing source file:", err)

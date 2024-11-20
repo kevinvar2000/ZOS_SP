@@ -1472,14 +1472,14 @@ func RemoveDirectoryEntry(filename string, cluster int32, dir_name string, fs_fo
 	cluster_to_clear := entry_to_remove.First_cluster
 	for cluster_to_clear != FAT_EOF {
 
-		fmt.Println("Clearing cluster:", cluster_to_clear)
+		// fmt.Println("Clearing cluster:", cluster_to_clear)
 
 		next_cluster, err := ReadFatEntry(filename, cluster_to_clear, fs_format)
 		if err != nil {
 			return fmt.Errorf("error reading FAT entry: %v", err)
 		}
 
-		fmt.Println("Next cluster:", next_cluster)
+		// fmt.Println("Next cluster:", next_cluster)
 
 		// Mark the current cluster as free
 		err = UpdateFatEntry(filename, cluster_to_clear, FAT_FREE, fs_format)
