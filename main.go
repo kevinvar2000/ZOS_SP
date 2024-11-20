@@ -12,6 +12,7 @@ func enterCommand(filename string, fs_format FileSystemFormat) {
 
 	for {
 		fmt.Print("Enter the command: ")
+<<<<<<< HEAD
 		var command string
 		fmt.Scanln(&command)
 
@@ -91,26 +92,46 @@ func enterCommand(filename string, fs_format FileSystemFormat) {
 
 	}
 
+=======
+		var command, arg1, arg2 string
+		fmt.Scanln(&command, &arg1, &arg2)
+		ExecuteCommand(filename, command, arg1, arg2, fs_format)
+		if command == "exit" || command == "quit" || command == "q" {
+			break
+		}
+	}
+>>>>>>> 7bb1479 (Reinitialize Git repository)
 }
 
 func checkFilename() string {
 
 	var filename string
 
+<<<<<<< HEAD
 	// Loop until a valid filename with the ".dat" extension is provided
 	for {
 		if filename == "" {
 			// Prompt the user to enter the filename
+=======
+	for {
+		if filename == "" {
+>>>>>>> 7bb1479 (Reinitialize Git repository)
 			fmt.Print("Enter the file name: ")
 			fmt.Scanln(&filename)
 		}
 
+<<<<<<< HEAD
 		// Check if the file has the correct ".dat" extension
+=======
+>>>>>>> 7bb1479 (Reinitialize Git repository)
 		if strings.HasSuffix(filename, ".dat") {
 			return filename
 		}
 
+<<<<<<< HEAD
 		// Invalid extension, re-prompt the user
+=======
+>>>>>>> 7bb1479 (Reinitialize Git repository)
 		fmt.Println("Invalid file extension. Please use a .dat file.")
 		filename = ""
 	}
@@ -123,7 +144,16 @@ func checkFile(filename string) {
 	if os.IsNotExist(err) {
 
 		fmt.Printf("\nFile does not exist. Formatting a new file system...\n")
+<<<<<<< HEAD
 		Format(filename)
+=======
+
+		var file_size_mb int
+		fmt.Print("Enter the desired file size in MB: ")
+		fmt.Scanln(&file_size_mb)
+
+		Format(filename, file_size_mb)
+>>>>>>> 7bb1479 (Reinitialize Git repository)
 		fmt.Printf("File created and formatted successfully.\n\n")
 
 	} else if err != nil {
@@ -137,11 +167,17 @@ func main() {
 	fmt.Printf("Welcome to the file system simulator\n")
 	fmt.Printf("KIV/ZOS - SP 2024; Author: Kevin Varchola\n\n")
 
+<<<<<<< HEAD
 	// Read arguments from the command line
 	args := os.Args
 	var filename string
 
 	// Check if the filename is provided as a command-line argument
+=======
+	args := os.Args
+	var filename string
+
+>>>>>>> 7bb1479 (Reinitialize Git repository)
 	if len(args) == 2 {
 		filename = args[1]
 	} else {
@@ -159,4 +195,10 @@ func main() {
 
 	enterCommand(filename, fs_format)
 
+<<<<<<< HEAD
+=======
+	fat1, fat2 := LoadFileSystem(filename)
+	PrintFileSystem(fat1, fat2, "fats_after.txt")
+
+>>>>>>> 7bb1479 (Reinitialize Git repository)
 }

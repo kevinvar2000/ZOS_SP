@@ -1,3 +1,8 @@
 fs_after_load.txt
 fs_saving.txt
+<<<<<<< HEAD
 test*.dat
+=======
+test*.dat
+fats*.txt
+>>>>>>> 7bb1479 (Reinitialize Git repository)
