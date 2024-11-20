@@ -423,29 +423,44 @@ func PrintCurrentPath() {
 	GetCurrentPath()
 }
 
-func PrintInformation(filename, file string, fs_format FileSystemFormat) {
+func PrintInformation(filename, src string, fs_format FileSystemFormat) {
 
-	file_cluster, file_name, err := ParsePath(filename, file, fs_format)
+	src_cluster, src_name, err := ParsePath(filename, src, fs_format)
 	if err != nil {
 		// fmt.Println("Error parsing file path:", err)
 		fmt.Println("PATH NOT FOUND")
 		return
 	}
 
-	// **Locate the file in the current directory**
-	entry, err := FindEntry(filename, file_name, file_cluster, fs_format)
+	src_entry, err := FindEntry(filename, src_name, src_cluster, fs_format)
 	if err != nil {
-		fmt.Println("FILE NOT FOUND")
-		// fmt.Println("Error checking file:", err)
+		fmt.Println("Error checking file:", err)
 		return
 	}
 
-	// **Print the file information**
-	fmt.Println("File Information:")
-	fmt.Println("Name:", string(bytes.Trim(entry.Name[:], "\x00")))
-	fmt.Println("Size:", entry.Size)
-	fmt.Println("First Cluster:", entry.First_cluster)
-	fmt.Println("Is Directory:", entry.Is_directory)
+	// fmt.Println("Source cluster:", src_cluster, "Source name:", src_name)
+	// fmt.Println("Source entry cluster:", src_entry.First_cluster)
+
+	fmt.Print(src_name, ": ")
+	current_cluster := src_entry.First_cluster
+	for current_cluster != FAT_EOF {
+
+		fmt.Printf("%d ", current_cluster)
+
+		next_cluster, err := ReadFatEntry(filename, current_cluster, fs_format)
+		if err != nil {
+			fmt.Println("Error reading FAT entry:", err)
+			return
+		}
+
+		if next_cluster == FAT_EOF {
+			break
+		}
+
+		current_cluster = next_cluster
+
+	}
+	fmt.Println()
 }
 
 func Incp(filename string, src string, dest string, fs_format FileSystemFormat) {
