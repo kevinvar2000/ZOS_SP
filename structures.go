@@ -7,6 +7,7 @@ const (
 	MAX_FILE_NAME = 12   // 8.3 format = 11 chars + null terminator
 	FAT_FREE      = -1   // FAT free cluster marker
 	FAT_EOF       = -2   // FAT end of file marker
+	FAT_BAD       = -3   // FAT bad cluster marker
 )
 
 // FileSystemFormat struct to store file system metadata
