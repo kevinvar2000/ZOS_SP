@@ -12,6 +12,7 @@ var current_cluster int32
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 )
@@ -1471,10 +1472,14 @@ func RemoveDirectoryEntry(filename string, cluster int32, dir_name string, fs_fo
 	cluster_to_clear := entry_to_remove.First_cluster
 	for cluster_to_clear != FAT_EOF {
 
+		fmt.Println("Clearing cluster:", cluster_to_clear)
+
 		next_cluster, err := ReadFatEntry(filename, cluster_to_clear, fs_format)
 		if err != nil {
 			return fmt.Errorf("error reading FAT entry: %v", err)
 		}
+
+		fmt.Println("Next cluster:", next_cluster)
 
 		// Mark the current cluster as free
 		err = UpdateFatEntry(filename, cluster_to_clear, FAT_FREE, fs_format)
@@ -1630,13 +1635,21 @@ func ReadFileContents(filename string, startCluster int32, fileSize int32, fs_fo
 
 		// Read the cluster's data
 		buffer := make([]byte, readSize)
-		_, err := vfsFile.ReadAt(buffer, offset)
-		if err != nil {
-			return nil, fmt.Errorf("error reading cluster %d: %v", currentCluster, err)
+		bytesRead, err := vfsFile.ReadAt(buffer, offset)
+		if err != nil && err != io.EOF {
+			return nil, fmt.Errorf("error reading cluster %d at offset %d: %v", currentCluster, offset, err)
 		}
 
 		// Append the data to the fileContents
 		fileContents = append(fileContents, buffer...)
+
+		// Reduce the remaining size
+		remainingSize -= int32(bytesRead)
+
+		// Stop reading if EOF reached or remaining size is zero
+		if remainingSize <= 0 {
+			break
+		}
 
 		// Get the next cluster from FAT
 		currentCluster, err = ReadFatEntry(filename, currentCluster, fs_format)
@@ -1649,7 +1662,6 @@ func ReadFileContents(filename string, startCluster int32, fileSize int32, fs_fo
 			break
 		}
 
-		remainingSize -= int32(readSize)
 	}
 
 	return fileContents, nil
@@ -1661,6 +1673,9 @@ func WriteFileContents(filename string, startCluster int32, fileContents []byte,
 
 	currentCluster := startCluster
 	remainingSize := int32(len(fileContents))
+
+	// fmt.Println("Start cluster:", startCluster)
+	// fmt.Println("Remaining size:", remainingSize)
 
 	// Open the VFS file
 	vfsFile, err := os.OpenFile(filename, os.O_RDWR, 0644)
@@ -1677,26 +1692,51 @@ func WriteFileContents(filename string, startCluster int32, fileContents []byte,
 			writeSize = int(remainingSize)
 		}
 
+		// fmt.Println("Writing to cluster:", currentCluster)
+		// fmt.Println("Offset:", offset)
+
 		// Write the cluster's data
 		_, err := vfsFile.WriteAt(fileContents[:writeSize], offset)
 		if err != nil {
 			return fmt.Errorf("error writing cluster %d: %v", currentCluster, err)
 		}
 
-		// Get the next cluster from FAT
-		nextCluster, err := ReadFatEntry(filename, currentCluster, fs_format)
+		// fmt.Println("Data written to cluster:", currentCluster)
+
+		// Update the current cluster and remaining size
+		err = UpdateFatEntry(filename, currentCluster, FAT_EOF, fs_format)
 		if err != nil {
-			return fmt.Errorf("error reading FAT entry for cluster %d: %v", currentCluster, err)
+			return fmt.Errorf("error updating FAT entry for cluster %d: %v", currentCluster, err)
 		}
 
-		// Check if we've reached the end of the file
-		if nextCluster == FAT_EOF {
+		// fmt.Println("Updated FAT entry for cluster:", currentCluster, "to:", FAT_EOF)
+
+		fileContents = fileContents[writeSize:]
+		remainingSize -= int32(writeSize)
+		// fmt.Println("Remaining size to write:", remainingSize)
+
+		if remainingSize <= 0 {
 			break
 		}
 
+		// Get the next cluster from FAT
+		nextCluster, err := FindFreeCluster(filename, fs_format.fat1_start)
+		if err != nil {
+			return fmt.Errorf("error finding free cluster: %v", err)
+		}
+
+		// Update the current cluster and remaining size
+		// fmt.Println("Next cluster:", nextCluster)
+
+		// Update the FAT entry for the current cluster
+		err = UpdateFatEntry(filename, currentCluster, nextCluster, fs_format)
+		if err != nil {
+			return fmt.Errorf("error updating FAT entry for cluster %d: %v", currentCluster, err)
+		}
+
+		// fmt.Println("Updated FAT entry for cluster:", currentCluster, "to:", nextCluster)
+
 		currentCluster = nextCluster
-		fileContents = fileContents[writeSize:]
-		remainingSize -= int32(writeSize)
 	}
 
 	// fmt.Println("*** File contents written successfully! ***")
