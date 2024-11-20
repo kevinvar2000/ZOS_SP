@@ -93,13 +93,6 @@ func CopyFile(filename, src, dest string, fs_format FileSystemFormat) {
 		return
 	}
 
-	// **Update the FAT table**
-	err = UpdateFatEntry(filename, dest_cluster, FAT_EOF, fs_format)
-	if err != nil {
-		fmt.Println("Error updating FAT table:", err)
-		return
-	}
-
 	// fmt.Println("*** Copy completed successfully ***")
 	fmt.Println("OK")
 }
@@ -184,13 +177,6 @@ func MoveFile(filename, src, dest string, fs_format FileSystemFormat) {
 	err = RemoveDirectoryEntry(filename, current_cluster, src, fs_format)
 	if err != nil {
 		fmt.Println("Error removing source file:", err)
-		return
-	}
-
-	// **Update the FAT table**
-	err = UpdateFatEntry(filename, dest_cluster, FAT_EOF, fs_format)
-	if err != nil {
-		fmt.Println("Error updating FAT table:", err)
 		return
 	}
 
@@ -500,13 +486,6 @@ func Incp(filename string, src string, dest string, fs_format FileSystemFormat) 
 	err = WriteDirectoryEntry(filename, destCluster, newEntry, fs_format)
 	if err != nil {
 		fmt.Println("Error writing directory entry:", err)
-		return
-	}
-
-	// **Update the FAT table**
-	err = UpdateFatEntry(filename, firstCluster, FAT_EOF, fs_format)
-	if err != nil {
-		fmt.Println("Error updating FAT table:", err)
 		return
 	}
 
