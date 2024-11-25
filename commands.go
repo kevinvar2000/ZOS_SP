@@ -329,11 +329,14 @@ func PrintFileContents(filename, file string, fs_format FileSystemFormat) {
 	}
 
 	// **Read the file contents**
-	err = ReadCluster(filename, entry.First_cluster, fs_format)
+	file_contents, err := ReadFileContents(filename, entry.First_cluster, entry.Size, fs_format)
 	if err != nil {
 		fmt.Println("Error reading file contents:", err)
 		return
 	}
+
+	// **Print the file contents**
+	fmt.Println(string(file_contents))
 
 	// fmt.Println("File Contents:")
 	// fmt.Println(string(file_contents))
