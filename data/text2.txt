@@ -1,0 +1,70 @@
+format 200
+
+# mkdir
+mkdir dir1
+mkdir dir2
+mkdir dir1/subdir1
+mkdir dir2/subdir2
+
+# incp
+incp file1.txt dir1/subdir1/fileA.txt
+incp file2.txt dir2/subdir2/fileB.txt
+ls
+ls dir1
+
+# cp
+cp dir1/subdir1/fileA.txt dir2/subdir2/fileA_copy.txt
+ls dir2/subdir2
+
+# cat
+cat dir1/subdir1/fileA.txt
+
+# mv
+mv dir1/subdir1/fileA.txt dir2/fileC.txt
+ls dir2
+
+# rm
+rm dir2/fileC.txt
+rmdir dir1/subdir1
+rmdir dir1
+
+# info
+info dir2/subdir2/fileB.txt
+
+# pwd
+cd dir2
+pwd
+
+# incp incorrect
+incp newfile.txt fileD.txt
+
+# mv incorrect
+mv fileD.txt subdir2/fileE.txt
+
+# cd
+cd subdir2
+
+# cat incorrect
+cat fileE.txt
+
+# cd root
+cd /
+
+# outcp
+outcp dir2/subdir2/fileB.txt outputB.txt
+
+# outcp incorrect
+outcp dir2/subdir2/fileE.txt outputE.txt
+
+# ls
+ls dir2
+ls dir2/subdir2
+
+# rm
+rm dir2/subdir2/fileB.txt
+
+# rm incorrect
+rm dir2/subdir2/fileE.txt
+rmdir dir2/subdir2
+rmdir dir2
+exit

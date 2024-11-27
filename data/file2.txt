@@ -1,0 +1,101 @@
+Informace k testům
+Během semestru je potřeba úspěšně splnit  zápočtový test.
+V případě neúspěchu je možnost jednoho opravného termínu.
+
+Datum konání testů: viz sekce Podmínky absolvování - Významná data a termíny.
+
+ 
+
+Informace k zápočtovému testu (upraveno pro ZS 2023).
+Zápočtový test je teoretický, píše se na papír v čase cvičení v učebně UC326.
+Datum a čas bude uvedeno v Courseware - Podmínky absolvování.
+Kartu JIS prosím s sebou. Žádné pomůcky nejsou povolené, jen psací potřeby.
+
+Zaměření testu:
+
+základ Linuxu - základní příkazy, roura, přesměrování výstupu (std. vstup, výstup, chybový výstup), ...
+teoretická látka probraná na cvičení (grafy procesů, max. paralelismus s cobegin, semafory, monitory aj.)
+teorie z přednášek 1-8 (přerušení, systémové volání, fork, synchronizační mechanismy, souborové systémy, plánování procesů atd.)
+Linuxový kurz
+Absolování Linuxového kurzu je dokladem, že se student seznámil se základy Linuxu a ovládá jej do té míry, že úspěšně splnil (i třeba na více pokusů) požadavky Linuxového kurzu.
+
+vyplnění Linuxového kurzu
+vyplněné kapitoly do 18té včetně, skore alespon 60 procent z většiny kapitol
+final comprehensive exam, skore alespoň 60 procent
+doporučuji si udělat labs, z nich se nejvíc naučíte
+(není na body, protože je zde jen příznak otevřel danou lab)
+ideálně před zápočtovým testem - znalosti se vám můžou hodit k testu, ale určitě do doby získání zápočtu
+ 
+
+Teoretické znalosti:
+
+ 
+
+znalost látky z přednášek v rozsahu 1.-8. přednášky na coursewaru
+co je to přerušení? k čemu slouží a co obsahuje tabulka vektorů přerušení?
+co udělám při dělení nulou, neplatné instrukci, výpadku stránku paměti?
+jak probíhá obsluha přerušení?
+co je to privilegovaná instrukce? uveďte příklad
+co je to řadič přerušení, IRQ, NMI?
+čím se liší monolitický OS  a OS založený na mikrojádře?
+co je to kritická sekce, souběh?
+co je nevýhodou aktivního čekání?
+čím se liší dávkové a interaktivní systémy?
+příklad uvíznutí, vyhladovění?
+jak se rozšíří RoundRobin když potřebuji priority? (více front dle priorit, RR v rámci fronty)
+jaké jsou datové struktury a základní operace semaforu, monitoru?
+čím se liší mutex a semafor?
+co znamená pojem dvojí kopírování při výměně zpráv mezi procesy?
+jaké výhody a nevýhody má randes-vous oproti dvojímu kopírování?
+co znamená pojem IPC?
+rozhodně není celý seznam, ale příklad znalostí
+Praktické znalosti:
+
+viz materiály ke cvičením
+jakým příkazem si vypíšu běžící procesy?
+jak vypíšu login přihlášeného uživatele na daném terminálu?
+jak vypíšu druhou až pátou řádku ze souboru s1.txt?
+co je uloženo v /etc/passwd a co v /etc/shadow?
+nastavení přístupových práv pomocí příkazu chmod
+co dělá ls -i a ls -al ?
+co udělá echo $2 v příkazovém skriptu?
+jak vypsat návratovou hodnotu posledního příkazu?
+jaký význam má první řádka skriptu #!/bin/bash ?
+k čemu slouží příkazy jobs, fg?
+jaký je rozdíl mezi du -h a df -h ?
+práce s procesy - fork(), execl(), wait() - viz příklad na cvičení
+práce s vlákny - pthread_create(), pthread_join() - viz příklad na cvičení
+použití semaforů a mutexů pro ošetření kritické sekce
+použití semaforů pro synchronizaci (producent-konzument), předávání řízení ('štafetový kolík')
+implementace instrukce TSL a spin-locku
+použití monitoru, 3 sémantiky volání (Hoare, Hanson, Java)
+grafy procesů (fork, execl, ..) - kolik procesů, co vypíší atp.
+grafy cobegin/coend - vztahy paralelních procesů
+kontinuální alokace, FAT, i-uzly, fragmenty NTFS
+ 
+
+----- poznámky -----------
+
+priklady s vyuzitim fork() / execl() / wait()
+   tj. strom procesu, kolikrat se vypise určitý řetězec atp.
+
+priklady s vyuzitim cobegin || coend
+vytvorit graf, prepsat do cobegin coend at jiz slovni uloha nebo prepis nejakeho vyrazu
+
+semafor obecne - z jakych datovych struktur a z jakych operaci se sklada?
+jak se jmenuji P a V operace v C v semaphore.h a v Jave?
+pouziti semaforu pro osetreni kriticke sekce
+pouziti semaforu pro synchronizaci (Ahoj svete - vypisy z  ruznych procesu)
+uloha producent-konzument
+
+mutex
+jake funkce pouzijeme v pthread a jake v Jave?
+
+vyuziti TSL pro osetreni kriticke sekce, jak napsat lock() a unlock()
+
+monitor
+   principy cinnosti, podminkove promenne
+  jak se vyjadruje v pthread (mutex a podminkova promenna) , Java (2 ruzne varianty)
+ monitor hospoda
+
+-----

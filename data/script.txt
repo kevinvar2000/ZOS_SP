@@ -1,0 +1,70 @@
+# Creating directories
+mkdir dir1
+mkdir dir2
+mkdir dir1/subdir1
+mkdir dir2/subdir2
+
+# Listing directories (root level)
+ls
+
+# Listing directories inside dir1
+ls dir1
+
+# Copying a file into subdir1
+incp bigfile.txt dir1/subdir1/fileA.txt
+
+# Copying a file into subdir2
+incp bigfile2.txt dir2/subdir2/fileB.txt
+
+# Listing directories after file copy
+ls dir1/subdir1
+ls dir2/subdir2
+
+# Moving fileA.txt from dir1/subdir1 to dir2/subdir2
+mv dir1/subdir1/fileA.txt dir2/subdir2/fileA_copy
+
+# Listing directories after moving file
+ls dir2/subdir2
+
+# Removing fileA_copy.txt
+rm dir2/subdir2/fileA_copy.txt
+
+# Removing a directory (subdir1)
+rmdir dir1/subdir1
+
+# Removing dir1 (which now only contains subdir2)
+rmdir dir1
+
+# Checking file information (fileB.txt in subdir2)
+info dir2/subdir2/fileB.txt
+
+# Changing directories
+cd dir2
+
+# Print the current working directory
+pwd
+
+# Incopying another file into subdir2
+incp newfile.txt dir2/subdir2/fileD.txt
+
+# Moving fileD.txt to subdir2 with a new name
+mv fileD.txt subdir2/fileE.txt
+
+# Listing the contents of subdir2
+ls dir2/subdir2
+
+# Trying to copy a file (should fail if file does not exist)
+cp dir1/subdir1/fileA.txt dir2/subdir2/fileA_copy.txt
+
+# Trying to remove a file that does not exist (should fail)
+rm dir2/subdir2/fileB.txt
+
+# Trying to remove subdir2 (should fail if there are still files inside)
+rmdir dir2/subdir2
+
+# Final directory cleanup
+rmdir dir2
+rmdir dir2/subdir2
+
+# Exit the script
+exit
