@@ -735,8 +735,11 @@ func CheckForBugs(filename string, fs_format FileSystemFormat) {
 	for i := 0; i < len(fat1); i++ {
 		if fat1[i] == FAT_BAD || fat2[i] == FAT_BAD {
 			fmt.Printf("Bad cluster found in FAT table: Cluster %d\n", i)
+			return
 		}
 	}
+
+	fmt.Println("OK")
 }
 
 func BugTest(filename, bug_file string, fs_format FileSystemFormat) {
