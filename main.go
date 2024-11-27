@@ -12,87 +12,6 @@ func enterCommand(filename string, fs_format FileSystemFormat) {
 
 	for {
 		fmt.Print("Enter the command: ")
-<<<<<<< HEAD
-		var command string
-		fmt.Scanln(&command)
-
-		switch command {
-		case "help":
-			PrintHelp()
-		case "cpy":
-			fmt.Print("Enter source and destination: ")
-			var src, dest string
-			fmt.Scanln(&src, &dest)
-			CopyFile(src, dest)
-		case "mv":
-			fmt.Print("Enter source and destination: ")
-			var src, dest string
-			fmt.Scanln(&src, &dest)
-			MoveFile(src, dest)
-		case "rm":
-			fmt.Print("Enter the file to remove: ")
-			var filename string
-			fmt.Scanln(&filename)
-			RemoveFile(filename)
-		case "mkdir":
-			fmt.Print("Enter the directory name: ")
-			var dirname string
-			fmt.Scanln(&dirname)
-			MakeDirectory(dirname, filename, fs_format)
-		case "rmdir":
-			fmt.Print("Enter the directory name: ")
-			var dirname string
-			fmt.Scanln(&dirname)
-			RemoveDirectory(dirname)
-		case "ls":
-			PrintDirectoryContents(filename, fs_format)
-		case "cat":
-			fmt.Print("Enter the file to display: ")
-			var filename string
-			fmt.Scanln(&filename)
-			PrintFileContents(filename)
-		case "cd":
-			fmt.Print("Enter the new path: ")
-			var newPath string
-			fmt.Scanln(&newPath)
-			ChangePath(newPath)
-		case "pwd":
-			PrintCurrentPath()
-		case "info":
-			fmt.Print("Enter the file to get info: ")
-			var filename string
-			fmt.Scanln(&filename)
-			PrintInformation(filename)
-		case "incp":
-			fmt.Print("Enter source and destination: ")
-			var src, dest string
-			fmt.Scanln(&src, &dest)
-			Incp(src, dest)
-		case "outcp":
-			fmt.Print("Enter source and destination: ")
-			var src, dest string
-			fmt.Scanln(&src, &dest)
-			Outcp(src, dest)
-		case "load":
-			fmt.Print("Enter the script filename to load: ")
-			var scriptFilename string
-			fmt.Scanln(&scriptFilename)
-			LoadFile(scriptFilename)
-		case "format":
-			fmt.Print("Enter the filesystem filename to format: ")
-			var fsFilename string
-			fmt.Scanln(&fsFilename)
-			FormatFileCmd(fsFilename)
-		case "exit":
-			fmt.Println("Exiting the file system simulator.")
-			return
-		default:
-			fmt.Println("Invalid command")
-		}
-
-	}
-
-=======
 		var command, arg1, arg2 string
 		fmt.Scanln(&command, &arg1, &arg2)
 		ExecuteCommand(filename, command, arg1, arg2, fs_format)
@@ -100,38 +19,22 @@ func enterCommand(filename string, fs_format FileSystemFormat) {
 			break
 		}
 	}
->>>>>>> 7bb1479 (Reinitialize Git repository)
 }
 
 func checkFilename() string {
 
 	var filename string
 
-<<<<<<< HEAD
-	// Loop until a valid filename with the ".dat" extension is provided
 	for {
 		if filename == "" {
-			// Prompt the user to enter the filename
-=======
-	for {
-		if filename == "" {
->>>>>>> 7bb1479 (Reinitialize Git repository)
 			fmt.Print("Enter the file name: ")
 			fmt.Scanln(&filename)
 		}
 
-<<<<<<< HEAD
-		// Check if the file has the correct ".dat" extension
-=======
->>>>>>> 7bb1479 (Reinitialize Git repository)
 		if strings.HasSuffix(filename, ".dat") {
 			return filename
 		}
 
-<<<<<<< HEAD
-		// Invalid extension, re-prompt the user
-=======
->>>>>>> 7bb1479 (Reinitialize Git repository)
 		fmt.Println("Invalid file extension. Please use a .dat file.")
 		filename = ""
 	}
@@ -144,16 +47,12 @@ func checkFile(filename string) {
 	if os.IsNotExist(err) {
 
 		fmt.Printf("\nFile does not exist. Formatting a new file system...\n")
-<<<<<<< HEAD
-		Format(filename)
-=======
 
 		var file_size_mb int
 		fmt.Print("Enter the desired file size in MB: ")
 		fmt.Scanln(&file_size_mb)
 
 		Format(filename, file_size_mb)
->>>>>>> 7bb1479 (Reinitialize Git repository)
 		fmt.Printf("File created and formatted successfully.\n\n")
 
 	} else if err != nil {
@@ -167,17 +66,9 @@ func main() {
 	fmt.Printf("Welcome to the file system simulator\n")
 	fmt.Printf("KIV/ZOS - SP 2024; Author: Kevin Varchola\n\n")
 
-<<<<<<< HEAD
-	// Read arguments from the command line
 	args := os.Args
 	var filename string
 
-	// Check if the filename is provided as a command-line argument
-=======
-	args := os.Args
-	var filename string
-
->>>>>>> 7bb1479 (Reinitialize Git repository)
 	if len(args) == 2 {
 		filename = args[1]
 	} else {
@@ -195,10 +86,7 @@ func main() {
 
 	enterCommand(filename, fs_format)
 
-<<<<<<< HEAD
-=======
 	fat1, fat2 := LoadFileSystem(filename)
 	PrintFileSystem(fat1, fat2, "fats_after.txt")
 
->>>>>>> 7bb1479 (Reinitialize Git repository)
 }
