@@ -1,6 +1,0 @@
-ls
-mkdir dir
-ls
-cd dir
-ls
-pwd
