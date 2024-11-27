@@ -45,8 +45,8 @@ func SaveFileSystem(filename string, fs_format FileSystemFormat, fat1, fat2 FAT)
 	}
 
 	// **Zero out the data starting at data_start**
-	remainingSize := fs_format.file_size - fs_format.data_start
-	zeroBuffer := make([]byte, remainingSize)
+	remaining_size := fs_format.file_size - fs_format.data_start
+	zero_buffer := make([]byte, remaining_size)
 	// fmt.Println("Zero buffer size:", len(zero_buffer))
 
 	// **Write the zero buffer to the data section**

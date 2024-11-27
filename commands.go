@@ -734,58 +734,6 @@ func CheckForBugs(filename string, fs_format FileSystemFormat) {
 	fmt.Println("OK")
 }
 
-func BugTest(filename, bug_file string, fs_format FileSystemFormat) {
-
-	current_cluster := GetCurrentCluster()
-
-	// Read all directory entries in the current directory
-	dirEntries, err := ReadDirectoryEntries(filename, current_cluster, fs_format)
-	if err != nil {
-		fmt.Println("Error reading directory entries:", err)
-		return
-	}
-
-	// Search for the specified file in the directory
-	var startCluster int32 = -1
-	for _, entry := range dirEntries {
-		if !IsZeroEntry(entry) { // Skip empty entries
-			entryName := string(bytes.Trim(entry.Name[:], "\x00"))
-			if entryName == bug_file {
-				startCluster = entry.First_cluster
-				break
-			}
-		}
-	}
-
-	// If the file is not found, display an error message
-	if startCluster == -1 {
-		fmt.Printf("Error: File '%s' not found or is not a file.\n", bug_file)
-		return
-	}
-
-	// Update the FAT entry to mark the file as corrupted (FAT_BAD_CLUSTER)
-	err = UpdateFatEntry(filename, startCluster, FAT_BAD, fs_format)
-	if err != nil {
-		fmt.Printf("Error marking file '%s' as corrupted: %v\n", bug_file, err)
-		return
-	}
-
-	fmt.Printf("Marked file '%s' as corrupted (FAT_BAD_CLUSTER).\n", bug_file)
-}
-
-func CheckForBugs(filename string, fs_format FileSystemFormat) {
-
-	// **Load the FAT tables from the file system**
-	fat1, fat2 := LoadFileSystem(filename)
-
-	// **Check for bad clusters in the FAT tables**
-	for i := 0; i < len(fat1); i++ {
-		if fat1[i] == FAT_BAD || fat2[i] == FAT_BAD {
-			fmt.Printf("Bad cluster found in FAT table: Cluster %d\n", i)
-		}
-	}
-}
-
 func PrintHelp() {
 	fmt.Println("Commands:")
 	fmt.Println("cp - Copy the file")
