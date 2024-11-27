@@ -66,6 +66,7 @@ func SaveFileSystem(filename string, fs_format FileSystemFormat, fat1, fat2 FAT)
 	}
 
 	// **Zero out the data starting at data_start**
+<<<<<<< HEAD
 	remainingSize := fs_format.file_size - fs_format.data_start
 	zeroBuffer := make([]byte, remainingSize)
 <<<<<<< HEAD
@@ -75,6 +76,11 @@ func SaveFileSystem(filename string, fs_format FileSystemFormat, fat1, fat2 FAT)
 	fmt.Println("Seeking to data start position:", fs_format.data_start)
 =======
 	// fmt.Println("Zero buffer size:", len(zeroBuffer))
+=======
+	remaining_size := fs_format.file_size - fs_format.data_start
+	zero_buffer := make([]byte, remaining_size)
+	// fmt.Println("Zero buffer size:", len(zero_buffer))
+>>>>>>> 6d8e89b (Refactor)
 
 	// **Write the zero buffer to the data section**
 	// fmt.Println("Seeking to data start position:", fs_format.data_start)
@@ -83,7 +89,7 @@ func SaveFileSystem(filename string, fs_format FileSystemFormat, fat1, fat2 FAT)
 	if err != nil {
 		return fmt.Errorf("error seeking to data start: %w", err)
 	}
-	_, err = file.Write(zeroBuffer)
+	_, err = file.Write(zero_buffer)
 	if err != nil {
 		return fmt.Errorf("error writing zeros to data section: %w", err)
 	}
@@ -524,25 +530,25 @@ func WriteDirectoryEntry(filename string, cluster int32, dir_entry DirectoryEntr
 	}
 
 	// **Find the first empty slot in the directory**
-	emptyIndex := -1
+	empty_index := -1
 	for i, entry := range dir_entries {
 		if IsZeroEntry(entry) {
-			emptyIndex = i
+			empty_index = i
 			break
 		}
 	}
 
 	// **Check if an empty slot was found**
-	if emptyIndex == -1 {
+	if empty_index == -1 {
 		return fmt.Errorf("no empty directory slot available in cluster %d", cluster)
 	}
 
 	// **Write the directory entry to the empty slot**
-	dir_entries[emptyIndex] = dir_entry
+	dir_entries[empty_index] = dir_entry
 
 	// **Calculate the data cluster position for the directory entry**
 	data_cluster := cluster - 2*fs_format.fat_cluster_count - 1
-	clusterOffset := int64(fs_format.data_start + data_cluster*CLUSTER_SIZE)
+	cluster_offset := int64(fs_format.data_start + data_cluster*CLUSTER_SIZE)
 
 	// **Write the directory entries back to the file**
 >>>>>>> 7bb1479 (Reinitialize Git repository)
@@ -552,6 +558,7 @@ func WriteDirectoryEntry(filename string, cluster int32, dir_entry DirectoryEntr
 	}
 	defer file.Close()
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 	// **Calculate the data cluster position for the directory entry**
 	data_cluster := cluster - 2*fs_format.fat_cluster_count - 1
@@ -579,6 +586,9 @@ func WriteDirectoryEntry(filename string, cluster int32, dir_entry DirectoryEntr
 	fmt.Println()
 =======
 	_, err = file.Seek(clusterOffset, 0)
+=======
+	_, err = file.Seek(cluster_offset, 0)
+>>>>>>> 6d8e89b (Refactor)
 	if err != nil {
 		return fmt.Errorf("error seeking to cluster offset: %v", err)
 	}
@@ -953,10 +963,11 @@ func SetCurrentAndParentDirectory(filename string, current_cluster, parent_clust
 >>>>>>> 7bb1479 (Reinitialize Git repository)
 
 	// **Zero padding for the remaining space in the cluster**
-	writtenSize := 2 * int64(binary.Size(current_entry))
-	remainingSize := CLUSTER_SIZE - writtenSize
-	zeroPadding := make([]byte, remainingSize)
+	written_size := 2 * int64(binary.Size(current_entry))
+	remaining_size := CLUSTER_SIZE - written_size
+	zero_padding := make([]byte, remaining_size)
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 	fmt.Println("Written size:", writtenSize)
 	fmt.Println("Remaining size:", remainingSize)
@@ -974,8 +985,13 @@ func SetCurrentAndParentDirectory(filename string, current_cluster, parent_clust
 	// fmt.Println("Written size:", writtenSize)
 	// fmt.Println("Remaining size:", remainingSize)
 	// fmt.Println("Zero padding size:", len(zeroPadding))
+=======
+	// fmt.Println("Written size:", written_size)
+	// fmt.Println("Remaining size:", remaining_size)
+	// fmt.Println("Zero padding size:", len(zero_padding))
+>>>>>>> 6d8e89b (Refactor)
 
-	if _, err := file.Write(zeroPadding); err != nil {
+	if _, err := file.Write(zero_padding); err != nil {
 		// fmt.Println("Error padding remaining space with zeros:", err)
 		return
 	}
@@ -1629,11 +1645,11 @@ func ReadCluster(filename string, cluster int32, fs_format FileSystemFormat) err
 	return nil
 }
 
-func ReadFileContents(filename string, startCluster int32, fileSize int32, fs_format FileSystemFormat) ([]byte, error) {
+func ReadFileContents(filename string, start_cluster int32, file_size int32, fs_format FileSystemFormat) ([]byte, error) {
 
-	var fileContents []byte
-	currentCluster := startCluster
-	remainingSize := fileSize
+	var file_contents []byte
+	current_cluster := start_cluster
+	remaining_size := file_size
 
 	// Open the VFS file
 	vfsFile, err := os.Open(filename)
@@ -1642,57 +1658,57 @@ func ReadFileContents(filename string, startCluster int32, fileSize int32, fs_fo
 	}
 	defer vfsFile.Close()
 
-	for remainingSize > 0 {
+	for remaining_size > 0 {
 		// Calculate the offset for the current cluster
-		offset := int64(fs_format.data_start + (currentCluster-2*fs_format.fat_cluster_count-1)*CLUSTER_SIZE)
+		offset := int64(fs_format.data_start + (current_cluster-2*fs_format.fat_cluster_count-1)*CLUSTER_SIZE)
 		readSize := CLUSTER_SIZE
-		if remainingSize < CLUSTER_SIZE {
-			readSize = int(remainingSize)
+		if remaining_size < CLUSTER_SIZE {
+			readSize = int(remaining_size)
 		}
 
 		// Read the cluster's data
 		buffer := make([]byte, readSize)
 		bytesRead, err := vfsFile.ReadAt(buffer, offset)
 		if err != nil && err != io.EOF {
-			return nil, fmt.Errorf("error reading cluster %d at offset %d: %v", currentCluster, offset, err)
+			return nil, fmt.Errorf("error reading cluster %d at offset %d: %v", current_cluster, offset, err)
 		}
 
-		// Append the data to the fileContents
-		fileContents = append(fileContents, buffer...)
+		// Append the data to the file_contents
+		file_contents = append(file_contents, buffer...)
 
 		// Reduce the remaining size
-		remainingSize -= int32(bytesRead)
+		remaining_size -= int32(bytesRead)
 
 		// Stop reading if EOF reached or remaining size is zero
-		if remainingSize <= 0 {
+		if remaining_size <= 0 {
 			break
 		}
 
 		// Get the next cluster from FAT
-		currentCluster, err = ReadFatEntry(filename, currentCluster, fs_format)
+		current_cluster, err = ReadFatEntry(filename, current_cluster, fs_format)
 		if err != nil {
-			return nil, fmt.Errorf("error reading FAT entry for cluster %d: %v", currentCluster, err)
+			return nil, fmt.Errorf("error reading FAT entry for cluster %d: %v", current_cluster, err)
 		}
 
 		// Check if we've reached the end of the file
-		if currentCluster == FAT_EOF {
+		if current_cluster == FAT_EOF {
 			break
 		}
 
 	}
 
-	return fileContents, nil
+	return file_contents, nil
 }
 
-func WriteFileContents(filename string, startCluster int32, fileContents []byte, fs_format FileSystemFormat) error {
+func WriteFileContents(filename string, startCluster int32, file_contents []byte, fs_format FileSystemFormat) error {
 
 	// fmt.Println("*** Writing file contents ***")
 
-	currentCluster := startCluster
-	remainingSize := int32(len(fileContents))
+	current_cluster := startCluster
+	remaining_size := int32(len(file_contents))
 
 	// fmt.Println("Start cluster:", startCluster)
-	// fmt.Println("Remaining size:", remainingSize)
+	// fmt.Println("Remaining size:", remaining_size)
 
 	// Open the VFS file
 	vfsFile, err := os.OpenFile(filename, os.O_RDWR, 0644)
@@ -1701,38 +1717,38 @@ func WriteFileContents(filename string, startCluster int32, fileContents []byte,
 	}
 	defer vfsFile.Close()
 
-	for remainingSize > 0 {
+	for remaining_size > 0 {
 		// Calculate the offset for the current cluster
-		offset := int64(fs_format.data_start + (currentCluster-2*fs_format.fat_cluster_count-1)*CLUSTER_SIZE)
+		offset := int64(fs_format.data_start + (current_cluster-2*fs_format.fat_cluster_count-1)*CLUSTER_SIZE)
 		writeSize := CLUSTER_SIZE
-		if remainingSize < CLUSTER_SIZE {
-			writeSize = int(remainingSize)
+		if remaining_size < CLUSTER_SIZE {
+			writeSize = int(remaining_size)
 		}
 
-		// fmt.Println("Writing to cluster:", currentCluster)
+		// fmt.Println("Writing to cluster:", current_cluster)
 		// fmt.Println("Offset:", offset)
 
 		// Write the cluster's data
-		_, err := vfsFile.WriteAt(fileContents[:writeSize], offset)
+		_, err := vfsFile.WriteAt(file_contents[:writeSize], offset)
 		if err != nil {
-			return fmt.Errorf("error writing cluster %d: %v", currentCluster, err)
+			return fmt.Errorf("error writing cluster %d: %v", current_cluster, err)
 		}
 
-		// fmt.Println("Data written to cluster:", currentCluster)
+		// fmt.Println("Data written to cluster:", current_cluster)
 
 		// Update the current cluster and remaining size
-		err = UpdateFatEntry(filename, currentCluster, FAT_EOF, fs_format)
+		err = UpdateFatEntry(filename, current_cluster, FAT_EOF, fs_format)
 		if err != nil {
-			return fmt.Errorf("error updating FAT entry for cluster %d: %v", currentCluster, err)
+			return fmt.Errorf("error updating FAT entry for cluster %d: %v", current_cluster, err)
 		}
 
-		// fmt.Println("Updated FAT entry for cluster:", currentCluster, "to:", FAT_EOF)
+		// fmt.Println("Updated FAT entry for cluster:", current_cluster, "to:", FAT_EOF)
 
-		fileContents = fileContents[writeSize:]
-		remainingSize -= int32(writeSize)
-		// fmt.Println("Remaining size to write:", remainingSize)
+		file_contents = file_contents[writeSize:]
+		remaining_size -= int32(writeSize)
+		// fmt.Println("Remaining size to write:", remaining_size)
 
-		if remainingSize <= 0 {
+		if remaining_size <= 0 {
 			break
 		}
 
@@ -1746,14 +1762,14 @@ func WriteFileContents(filename string, startCluster int32, fileContents []byte,
 		// fmt.Println("Next cluster:", nextCluster)
 
 		// Update the FAT entry for the current cluster
-		err = UpdateFatEntry(filename, currentCluster, nextCluster, fs_format)
+		err = UpdateFatEntry(filename, current_cluster, nextCluster, fs_format)
 		if err != nil {
-			return fmt.Errorf("error updating FAT entry for cluster %d: %v", currentCluster, err)
+			return fmt.Errorf("error updating FAT entry for cluster %d: %v", current_cluster, err)
 		}
 
-		// fmt.Println("Updated FAT entry for cluster:", currentCluster, "to:", nextCluster)
+		// fmt.Println("Updated FAT entry for cluster:", current_cluster, "to:", nextCluster)
 
-		currentCluster = nextCluster
+		current_cluster = nextCluster
 	}
 
 	// fmt.Println("*** File contents written successfully! ***")

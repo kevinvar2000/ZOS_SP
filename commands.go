@@ -57,7 +57,7 @@ func CopyFile(filename, src, dest string, fs_format FileSystemFormat) {
 	}
 
 	// **Read file contents using the helper function**
-	fileContents, err := ReadFileContents(filename, src_entry.First_cluster, src_entry.Size, fs_format)
+	file_contents, err := ReadFileContents(filename, src_entry.First_cluster, src_entry.Size, fs_format)
 	if err != nil {
 		fmt.Println("Error reading source file contents:", err)
 		return
@@ -78,7 +78,7 @@ func CopyFile(filename, src, dest string, fs_format FileSystemFormat) {
 	// fmt.Println("First Free Cluster:", dest_cluster)
 
 	// **Write file contents to the destination clusters**
-	err = WriteFileContents(filename, dest_cluster, fileContents, fs_format)
+	err = WriteFileContents(filename, dest_cluster, file_contents, fs_format)
 	if err != nil {
 		fmt.Println("Error writing file contents:", err)
 		return
@@ -155,7 +155,7 @@ func MoveFile(filename, src, dest string, fs_format FileSystemFormat) {
 	}
 
 	// **Read the source file contents**
-	fileContents, err := ReadFileContents(filename, src_entry.First_cluster, src_entry.Size, fs_format)
+	file_contents, err := ReadFileContents(filename, src_entry.First_cluster, src_entry.Size, fs_format)
 	if err != nil {
 		fmt.Println("Error reading source file contents:", err)
 		return
@@ -174,7 +174,7 @@ func MoveFile(filename, src, dest string, fs_format FileSystemFormat) {
 	}
 
 	// **Write file contents to the destination clusters**
-	err = WriteFileContents(filename, free_cluster, fileContents, fs_format)
+	err = WriteFileContents(filename, free_cluster, file_contents, fs_format)
 	if err != nil {
 		fmt.Println("Error writing file contents:", err)
 		return
@@ -476,82 +476,82 @@ func Incp(filename string, src string, dest string, fs_format FileSystemFormat) 
 	defer file.Close()
 
 	// **Get the size of the source file**
-	fileInfo, err := file.Stat()
+	file_info, err := file.Stat()
 	if err != nil {
 		fmt.Println("Error getting file information:", err)
 		return
 	}
-	fileSize := int32(fileInfo.Size())
+	file_size := int32(file_info.Size())
 
-	// fmt.Println("Source File Size:", fileSize)
+	// fmt.Println("Source File Size:", file_size)
 
 	// **Read the source file's contents**
-	fileContents := make([]byte, fileSize)
-	_, err = file.Read(fileContents)
+	file_contents := make([]byte, file_size)
+	_, err = file.Read(file_contents)
 	if err != nil {
 		fmt.Println("Error reading source file:", err)
 		return
 	}
 
-	// fmt.Println("File contents size:", len(fileContents))
-	// fmt.Println("File contents:", string(fileContents))
-	// fmt.Println("File contents:", fileContents)
+	// fmt.Println("File contents size:", len(file_contents))
+	// fmt.Println("File contents:", string(file_contents))
+	// fmt.Println("File contents:", file_contents)
 
 	// **Parse the destination path**
-	destCluster, destName, err := ParsePath(filename, dest, fs_format, true)
+	dest_cluster, dest_name, err := ParsePath(filename, dest, fs_format, true)
 	if err != nil {
 		fmt.Println("PATH NOT FOUND")
 		// fmt.Println("Error parsing destination path:", err)
 		return
 	}
 
-	// fmt.Println("Destination Cluster:", destCluster, "Destination Name:", destName)
+	// fmt.Println("Destination Cluster:", dest_cluster, "Destination Name:", dest_name)
 
 	// **Check if a file with the same name already exists**
-	dirEntries, err := ReadDirectoryEntries(filename, destCluster, fs_format)
+	dir_entries, err := ReadDirectoryEntries(filename, dest_cluster, fs_format)
 	if err != nil {
 		fmt.Println("Error reading directory entries:", err)
 		return
 	}
 
-	for _, entry := range dirEntries {
-		if string(bytes.Trim(entry.Name[:], "\x00")) == destName {
-			fmt.Println("Destination file already exists:", destName)
+	for _, entry := range dir_entries {
+		if string(bytes.Trim(entry.Name[:], "\x00")) == dest_name {
+			fmt.Println("Destination file already exists:", dest_name)
 			return
 		}
 	}
 
 	// **Find the first free cluster for the file**
-	firstCluster, err := FindFreeCluster(filename, fs_format.fat1_start)
+	first_cluster, err := FindFreeCluster(filename, fs_format.fat1_start)
 	if err != nil {
 		fmt.Println("Error finding free cluster:", err)
 		return
 	}
 
-	if firstCluster == -1 {
+	if first_cluster == -1 {
 		fmt.Println("Error: Not enough free space in the file system.")
 		return
 	}
 
-	// fmt.Println("First Free Cluster:", firstCluster)
+	// fmt.Println("First Free Cluster:", first_cluster)
 
 	// **Write the file data into the VFS**
-	err = WriteFileContents(filename, firstCluster, fileContents, fs_format)
+	err = WriteFileContents(filename, first_cluster, file_contents, fs_format)
 	if err != nil {
 		fmt.Println("Error writing file contents:", err)
 		return
 	}
 
 	// **Create a directory entry for the new file**
-	newEntry := DirectoryEntry{
-		Size:          fileSize,
-		First_cluster: firstCluster,
+	new_entry := DirectoryEntry{
+		Size:          file_size,
+		First_cluster: first_cluster,
 		Is_directory:  0, // 0 indicates a file
 	}
-	copy(newEntry.Name[:], destName)
+	copy(new_entry.Name[:], dest_name)
 
 	// **Write the new directory entry to the directory**
-	err = WriteDirectoryEntry(filename, destCluster, newEntry, fs_format)
+	err = WriteDirectoryEntry(filename, dest_cluster, new_entry, fs_format)
 	if err != nil {
 		fmt.Println("Error writing directory entry:", err)
 		return
@@ -573,7 +573,7 @@ func Outcp(filename string, src string, dest string, fs_format FileSystemFormat)
 	// fmt.Println("Source Cluster:", src_cluster)
 
 	// **Locate the source file in the directory**
-	dirEntries, err := ReadDirectoryEntries(filename, src_cluster, fs_format)
+	dir_entries, err := ReadDirectoryEntries(filename, src_cluster, fs_format)
 	if err != nil {
 		fmt.Println("Error reading directory entries:", err)
 		return
@@ -581,7 +581,7 @@ func Outcp(filename string, src string, dest string, fs_format FileSystemFormat)
 
 	var src_entry DirectoryEntry
 	found := false
-	for _, entry := range dirEntries {
+	for _, entry := range dir_entries {
 		if string(bytes.Trim(entry.Name[:], "\x00")) == src_name {
 			src_entry = entry
 			found = true
@@ -602,7 +602,7 @@ func Outcp(filename string, src string, dest string, fs_format FileSystemFormat)
 	}
 
 	// **Read the file contents from the VFS using ReadFileContents**
-	fileContents, err := ReadFileContents(filename, src_entry.First_cluster, src_entry.Size, fs_format)
+	file_contents, err := ReadFileContents(filename, src_entry.First_cluster, src_entry.Size, fs_format)
 	if err != nil {
 		fmt.Println("Error reading source file from VFS:", err)
 		return
@@ -618,7 +618,7 @@ func Outcp(filename string, src string, dest string, fs_format FileSystemFormat)
 	defer destFile.Close()
 
 	// **Write the file contents to the destination file**
-	_, err = destFile.Write(fileContents)
+	_, err = destFile.Write(file_contents)
 	if err != nil {
 		fmt.Println("Error writing to destination file:", err)
 		return
@@ -689,32 +689,32 @@ func BugTest(filename, bug_file string, fs_format FileSystemFormat) {
 	}
 
 	// Read all directory entries in the current directory
-	dirEntries, err := ReadDirectoryEntries(filename, bug_file_cluster, fs_format)
+	dir_entries, err := ReadDirectoryEntries(filename, bug_file_cluster, fs_format)
 	if err != nil {
 		fmt.Println("Error reading directory entries:", err)
 		return
 	}
 
 	// Search for the specified file in the directory
-	var startCluster int32 = -1
-	for _, entry := range dirEntries {
+	var start_cluster int32 = -1
+	for _, entry := range dir_entries {
 		if !IsZeroEntry(entry) { // Skip empty entries
 			entryName := string(bytes.Trim(entry.Name[:], "\x00"))
 			if entryName == bug_file_name {
-				startCluster = entry.First_cluster
+				start_cluster = entry.First_cluster
 				break
 			}
 		}
 	}
 
 	// If the file is not found, display an error message
-	if startCluster == -1 {
+	if start_cluster == -1 {
 		fmt.Printf("Error: File '%s' not found or is not a file.\n", bug_file)
 		return
 	}
 
 	// Update the FAT entry to mark the file as corrupted (FAT_BAD_CLUSTER)
-	err = UpdateFatEntry(filename, startCluster, FAT_BAD, fs_format)
+	err = UpdateFatEntry(filename, start_cluster, FAT_BAD, fs_format)
 	if err != nil {
 		fmt.Printf("Error marking file '%s' as corrupted: %v\n", bug_file, err)
 		return
